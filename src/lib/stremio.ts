@@ -76,10 +76,10 @@ export function withProxy(url: string): string | null {
   return proxy.includes('{url}') ? proxy.replace('{url}', encodeURIComponent(url)) : proxy + url;
 }
 
-export async function fetchJson<T>(url: string, { timeout = 15000, useCache = true } = {}): Promise<T> {
+export async function fetchJson<T>(url: string, { timeout = 15000, useCache = true, ttl = CACHE_TTL } = {}): Promise<T> {
   if (useCache) {
     const hit = cache.get(url);
-    if (hit && Date.now() - hit.at < CACHE_TTL) return hit.data as T;
+    if (hit && Date.now() - hit.at < ttl) return hit.data as T;
     const pending = inflight.get(url);
     if (pending) return pending as Promise<T>;
   }

@@ -11,7 +11,13 @@ export const isNative = () => Capacitor.isNativePlatform();
  * addons and playlists without CORS headers (or on plain http) just work.
  */
 export async function nativeGetText(url: string, timeout = 20000): Promise<string> {
-  const res = await CapacitorHttp.get({ url, responseType: 'text', connectTimeout: timeout, readTimeout: timeout });
+  const res = await CapacitorHttp.get({
+    url,
+    responseType: 'text',
+    connectTimeout: timeout,
+    readTimeout: timeout,
+    headers: { 'User-Agent': 'FLEXY/1.0 (Android)', Accept: 'application/json, */*' },
+  });
   if (res.status < 200 || res.status >= 300) throw new Error(`HTTP ${res.status}`);
   return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
 }

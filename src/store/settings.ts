@@ -15,6 +15,7 @@ export interface Settings {
   fitMode: FitMode;
   seekStep: number;
   showAdult: boolean;
+  showMatchesHome: boolean;
   streamingServer: string;
   corsProxy: string;
   profileName: string;
@@ -34,6 +35,7 @@ export const useSettings = create<Settings>()(
       fitMode: 'contain',
       seekStep: 10,
       showAdult: false,
+      showMatchesHome: true,
       streamingServer: '',
       corsProxy: '',
       profileName: '',

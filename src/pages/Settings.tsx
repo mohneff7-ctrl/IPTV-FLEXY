@@ -9,6 +9,7 @@ import { PageHeader } from '../components/Shell';
 import { LogoMark } from '../components/Logo';
 import { Toggle, toast } from '../components/ui';
 import {
+  IconBall,
   IconCC,
   IconDownload,
   IconGlobe,
@@ -24,7 +25,7 @@ import {
   IconUser,
 } from '../components/Icons';
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 
 function Row({ icon, title, desc, children }: { icon: ReactNode; title: string; desc?: string; children?: ReactNode }) {
   return (
@@ -115,6 +116,10 @@ export default function Settings() {
       </Row>
       <Row icon={<IconUser size={24} />} title={t('profile')} desc={t('profileName')}>
         <TextSetting value={s.profileName} onSave={(v) => set('profileName', v)} placeholder="FLEXY" />
+      </Row>
+
+      <Row icon={<IconBall size={24} />} title={t('showMatchesHome')} desc={t('showMatchesHomeDesc')}>
+        <Toggle checked={s.showMatchesHome} onChange={(v) => set('showMatchesHome', v)} label={t('showMatchesHome')} />
       </Row>
 
       <h3 className="set-section">{t('player')}</h3>

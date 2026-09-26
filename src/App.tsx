@@ -16,6 +16,7 @@ const Favorites = lazy(() => import('./pages/Favorites'));
 const Addons = lazy(() => import('./pages/Addons'));
 const Channels = lazy(() => import('./pages/Channels'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Matches = lazy(() => import('./pages/Matches'));
 const Player = lazy(() => import('./player/Player'));
 
 function Layout() {
@@ -51,6 +52,7 @@ function Layout() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/addons" element={<Addons />} />
             <Route path="/channels" element={<Channels />} />
+            <Route path="/matches" element={<Matches />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/play" element={<Player />} />
             <Route path="*" element={<Home />} />

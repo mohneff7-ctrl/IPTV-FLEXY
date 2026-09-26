@@ -14,6 +14,7 @@
 | 🎬 **Player** | hls.js (HLS/m3u8), mpegts.js (IPTV `.ts` / FLV live) and the native `<video>` element, with **automatic fallback** between engines. The engines load only when needed. Quality and audio-track selection, speed, fit/zoom/stretch, picture-in-picture, fullscreen with landscape lock, and a screen lock. |
 | ⚡ **Player UX** | Resume where you left off, double-tap to seek, keyboard shortcuts, lock-screen media controls, keep-screen-awake, **auto next episode** (picks the same `bingeGroup` stream, as Stremio does), and a "next episode" countdown. |
 | 💬 **Subtitles** | From every subtitle addon plus the ones embedded in streams. SRT/VTT, Arabic CP-1256 auto-detection, a sync (delay) control, size and background settings, and auto-select of your preferred language. |
+| ⚽ **Football** | Live scores for the day across 300+ competitions (Champions League, Premier League, LALIGA, Saudi Pro League…), refreshed every 30 s during live matches. There's a 7-day date strip, top-league / live / all filters, and match details (goals, cards, substitutions, stats, venue, TV channels) with a "Watch" button that searches your IPTV channels. Data comes from ESPN's public API. |
 | 📺 **Live TV** | Add M3U playlists; channels are grouped with search. Addon `tv` catalogs are listed too. |
 | ❤️ **Library** | Favorites, continue watching, per-episode watched marks, and backup export/import. |
 | 🌍 **Arabic RTL + English** | Full right-to-left layout, switchable in Settings. |

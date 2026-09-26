@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePlaylists } from '../store/playlists';
 import { usePlayback } from '../store/playback';
 import { useCatalogs } from '../lib/hooks';
@@ -19,7 +19,8 @@ export default function Channels() {
   const tvCatalogs = useCatalogs((c) => c.type === 'tv' || c.type === 'channel');
   const [active, setActive] = useState<string | undefined>(playlists[0]?.id);
   const [group, setGroup] = useState<string>();
-  const [query, setQuery] = useState('');
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(params.get('q') ?? '');
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: '', url: '' });
   const [busy, setBusy] = useState(false);
