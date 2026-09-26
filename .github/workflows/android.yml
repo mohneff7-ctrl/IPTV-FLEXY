@@ -5,6 +5,9 @@ on:
     branches: [main, 'claude/**']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -38,3 +41,19 @@ jobs:
         with:
           name: FLEXY-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+
+      # A stable download link for phones:
+      # https://github.com/<owner>/<repo>/releases/latest/download/FLEXY.apk
+      - name: Publish APK as the latest release
+        if: github.event_name != 'pull_request'
+        run: |
+          VERSION=$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)
+          cp android/app/build/outputs/apk/release/app-release.apk FLEXY.apk
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" FLEXY.apk --clobber
+          else
+            gh release create "$TAG" FLEXY.apk --title "FLEXY $VERSION" --notes "Android APK for phones and Android TV. Download FLEXY.apk and open it on your phone." --target "$GITHUB_SHA" --latest
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

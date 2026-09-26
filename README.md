@@ -30,6 +30,8 @@ npm run build      # production build in dist/
 
 ## 📱 Android APK
 
+**📥 Download for your phone:** https://github.com/mohneff7-ctrl/IPTV-FLEXY/releases/latest/download/FLEXY.apk (open this link in your phone's browser).
+
 Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-apk` from the run's artifacts and install it on your phone or Android TV.
 
 All builds are signed with the same key (`android/app/flexy.keystore`), so a new APK always installs over the previous one. If Android says **"App not installed"**, uninstall any older FLEXY build first (older test builds were signed with a different key). For the Play Store, create a private upload key and keep it out of the repository.
