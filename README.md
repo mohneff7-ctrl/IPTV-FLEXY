@@ -29,14 +29,16 @@ npm run build      # production build in dist/
 
 ## 📱 Android APK
 
-Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-debug-apk` from the run's artifacts and install it on your phone or Android TV.
+Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-apk` from the run's artifacts and install it on your phone or Android TV.
+
+All builds are signed with the same key (`android/app/flexy.keystore`), so a new APK always installs over the previous one. If Android says **"App not installed"**, uninstall any older FLEXY build first (older test builds were signed with a different key). For the Play Store, create a private upload key and keep it out of the repository.
 
 Local build (requires Android Studio / Android SDK + JDK 21):
 
 ```bash
 npm run android:sync   # build web app + copy into android/
 npm run android:open   # open in Android Studio (Run ▶)
-npm run android:apk    # or build android/app/build/outputs/apk/debug/app-debug.apk
+npm run android:apk    # or build android/app/build/outputs/apk/release/app-release.apk
 ```
 
 In the Android app, addon and playlist requests go through the native HTTP stack, so addons without CORS headers work. Plain `http://` IPTV links are allowed.
