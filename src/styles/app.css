@@ -3374,7 +3374,7 @@ img {
 .p-watermark {
   position: absolute;
   z-index: 4;
-  top: calc(14px + var(--safe-t));
+  top: calc(5px + var(--safe-t));
   left: calc(18px + env(safe-area-inset-left, 0px));
   font-family: 'Cairo Variable', var(--font);
   font-weight: 900;

@@ -165,7 +165,7 @@ public class PlayerActivity extends AppCompatActivity {
         watermark.setClickable(false);
         watermark.setFocusable(false);
         FrameLayout.LayoutParams wmParams = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.LEFT);
-        wmParams.setMargins(dp(20), dp(12), 0, 0);
+        wmParams.setMargins(dp(20), dp(4), 0, 0);
         root.addView(watermark, wmParams);
 
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
