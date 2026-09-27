@@ -6,6 +6,7 @@ import { usePlaylists } from '../store/playlists';
 import { useT } from '../lib/i18n';
 import { langName, SUB_LANG_OPTIONS } from '../lib/subtitles';
 import { PageHeader } from '../components/Shell';
+import { hasNativePlayer } from '../lib/native';
 import { LogoMark } from '../components/Logo';
 import { Toggle, toast } from '../components/ui';
 import {
@@ -25,7 +26,7 @@ import {
   IconUser,
 } from '../components/Icons';
 
-const VERSION = '1.0.4';
+const VERSION = '1.1.0';
 
 function Row({ icon, title, desc, children }: { icon: ReactNode; title: string; desc?: string; children?: ReactNode }) {
   return (
@@ -123,6 +124,21 @@ export default function Settings() {
       </Row>
 
       <h3 className="set-section">{t('player')}</h3>
+      {hasNativePlayer() && (
+        <Row icon={<IconPlay size={22} />} title={t('playerEngine')} desc={t('playerEngineDesc')}>
+          <div className="segmented">
+            <button className={s.playerEngine === 'native' ? 'on' : ''} onClick={() => set('playerEngine', 'native')}>
+              {t('engineNative')}
+            </button>
+            <button className={s.playerEngine === 'web' ? 'on' : ''} onClick={() => set('playerEngine', 'web')}>
+              {t('engineWeb')}
+            </button>
+          </div>
+        </Row>
+      )}
+      <Row icon={<IconLayers size={24} />} title={t('maxQuality')} desc={t('maxQualityDesc')}>
+        <Toggle checked={s.maxQuality} onChange={(v) => set('maxQuality', v)} label={t('maxQuality')} />
+      </Row>
       <Row icon={<IconNext size={24} />} title={t('autoplayNext')} desc={t('autoplayNextDesc')}>
         <Toggle checked={s.autoplayNext} onChange={(v) => set('autoplayNext', v)} label={t('autoplayNext')} />
       </Row>

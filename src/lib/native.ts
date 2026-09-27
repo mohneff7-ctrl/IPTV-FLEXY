@@ -2,7 +2,7 @@
  * Thin bridge to native features when FLEXY runs as an Android/iOS app
  * (Capacitor). Every function is a safe no-op in the browser.
  */
-import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core';
 
 export const isNative = () => Capacitor.isNativePlatform();
 
@@ -75,4 +75,78 @@ export async function setupStatusBar() {
   } catch {
     /* ignore */
   }
+}
+
+/* ---------------- Native player (ExoPlayer) ---------------- */
+
+export interface NativePlayOptions {
+  url: string;
+  title: string;
+  subtitle?: string;
+  headers?: Record<string, string>;
+  subtitles?: { url: string; lang: string; label: string }[];
+  startMs?: number;
+  highest?: boolean;
+  subLang?: string;
+}
+
+export interface NativePlayResult {
+  position?: number;
+  duration?: number;
+  ended?: boolean;
+  error?: string;
+}
+
+interface NativePlayerPlugin {
+  play(opts: NativePlayOptions): Promise<NativePlayResult>;
+}
+
+const NativePlayer = registerPlugin<NativePlayerPlugin>('NativePlayer');
+
+export const hasNativePlayer = () => isNative() && Capacitor.getPlatform() === 'android';
+
+export function nativePlay(opts: NativePlayOptions): Promise<NativePlayResult> {
+  return NativePlayer.play(opts);
+}
+
+/* ---------------- External links ---------------- */
+
+const MEDIA_EXT = /\.(m3u8|mpd|mp4|m4v|mkv|webm|mov|avi|ts|flv|mp3|aac)(\?|#|$)/i;
+
+/**
+ * Is this URL a video (so it can play inside FLEXY) or a web page?
+ * Checks the extension first, then asks the server for its content type.
+ */
+export async function isMediaUrl(url: string): Promise<boolean> {
+  if (MEDIA_EXT.test(url)) return true;
+  if (!/^https?:/i.test(url)) return false;
+  try {
+    if (isNative()) {
+      const res = await CapacitorHttp.request({
+        url,
+        method: 'HEAD',
+        connectTimeout: 4000,
+        readTimeout: 4000,
+        headers: { 'User-Agent': 'FLEXY/1.0 (Android)' },
+      });
+      const type = String(res.headers['Content-Type'] ?? res.headers['content-type'] ?? '');
+      return /video|mpegurl|dash\+xml|octet-stream|mp2t/i.test(type);
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(url, { method: 'HEAD', signal: ctrl.signal }).finally(() => clearTimeout(t));
+    return /video|mpegurl|dash\+xml|mp2t/i.test(res.headers.get('content-type') ?? '');
+  } catch {
+    return false;
+  }
+}
+
+/** Opens a web page inside the app (Chrome Custom Tab) instead of leaving FLEXY. */
+export async function openInApp(url: string) {
+  if (isNative()) {
+    const { Browser } = await import('@capacitor/browser');
+    await Browser.open({ url, toolbarColor: '#08080b', presentationStyle: 'fullscreen' });
+    return;
+  }
+  window.open(url, '_blank', 'noopener');
 }

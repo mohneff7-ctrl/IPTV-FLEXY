@@ -16,6 +16,10 @@ export interface Settings {
   seekStep: number;
   showAdult: boolean;
   showMatchesHome: boolean;
+  /** Android: native ExoPlayer (fast, hardware, MKV/HEVC) or the built-in web player. */
+  playerEngine: 'native' | 'web';
+  /** Always play the highest quality the stream offers. */
+  maxQuality: boolean;
   streamingServer: string;
   corsProxy: string;
   profileName: string;
@@ -36,6 +40,8 @@ export const useSettings = create<Settings>()(
       seekStep: 10,
       showAdult: false,
       showMatchesHome: true,
+      playerEngine: 'native',
+      maxQuality: true,
       streamingServer: '',
       corsProxy: '',
       profileName: '',

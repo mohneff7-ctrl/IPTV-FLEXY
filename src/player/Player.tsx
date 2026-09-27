@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { SourcedStream, Video } from '../lib/types';
 import { usePlayback, type PlaybackSession } from '../store/playback';
 import { isWatched, useLibrary } from '../store/library';
 import { useSettings, type FitMode } from '../store/settings';
 import { useActiveAddons } from '../store/addons';
-import { getStreams, getSubtitles } from '../lib/stremio';
-import { externalPlayerUrl, playableUrl, qualityOf } from '../lib/streams';
+import { getSubtitles } from '../lib/stremio';
+import { externalPlayerUrl, playableUrl } from '../lib/streams';
 import { activeCues, langName, loadSubtitle, type Cue } from '../lib/subtitles';
 import { useT } from '../lib/i18n';
 import { cx, formatTime } from '../lib/format';
 import { createEngine, engineOrder, type Engine } from './engine';
 import { SeekBar } from './SeekBar';
-import { enterPlayerMode, exitPlayerMode } from '../lib/native';
+import { episodeLabel, findNextStream, nextVideo } from './next';
+import { NativeLauncher } from './NativeLauncher';
+import { enterPlayerMode, exitPlayerMode, hasNativePlayer } from '../lib/native';
 import { Spinner, toast } from '../components/ui';
 import {
   IconAspect,
@@ -46,26 +47,22 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 const FITS: FitMode[] = ['contain', 'cover', 'fill'];
 const HIDE_AFTER = 3200;
 
-/** Next episode in watch order (specials are skipped unless we are in them). */
-function nextVideo(videos: Video[] | undefined, current?: Video): Video | undefined {
-  if (!videos || !current) return undefined;
-  const same = (v: Video) => ((current.season ?? 0) === 0 ? (v.season ?? 0) === 0 : (v.season ?? 0) > 0);
-  const order = videos
-    .filter(same)
-    .sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? a.number ?? 0) - (b.episode ?? b.number ?? 0));
-  const i = order.findIndex((v) => v.id === current.id);
-  return i >= 0 ? order[i + 1] : undefined;
-}
-
 export default function Player() {
   const session = usePlayback((s) => s.session);
+  const engine = useSettings((s) => s.playerEngine);
   const nav = useNavigate();
+  const key = session ? session.videoId + (session.stream.url ?? session.stream.infoHash) : '';
+  // Streams the native player could not open fall back to the web player.
+  const [webOnly, setWebOnly] = useState<string | null>(null);
   useEffect(() => {
     if (!session) nav('/', { replace: true });
   }, [session, nav]);
   if (!session) return null;
   if (session.stream.ytId) return <YouTubePlayer session={session} />;
-  return <VideoPlayer key={session.videoId + (session.stream.url ?? session.stream.infoHash)} session={session} />;
+  if (hasNativePlayer() && engine === 'native' && webOnly !== key) {
+    return <NativeLauncher key={key} session={session} onFallback={() => setWebOnly(key)} />;
+  }
+  return <VideoPlayer key={key} session={session} />;
 }
 
 function YouTubePlayer({ session }: { session: PlaybackSession }) {
@@ -164,6 +161,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
         const engine = await createEngine(kind, el, url, {
           onFatal: (r) => !cancelled && engineRef.current === engine && tryNext(r),
           onTracks: () => setTracksVersion((v) => v + 1),
+          highest: settings.maxQuality,
         });
         if (cancelled) return engine.destroy();
         engineRef.current = engine;
@@ -409,30 +407,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
     setNextLoading(true);
     setCountdown(null);
     persist();
-    const found = await new Promise<SourcedStream | undefined>((resolve) => {
-      const group = stream.behaviorHints?.bingeGroup;
-      const q = qualityOf(stream);
-      let best: SourcedStream | undefined;
-      const timer = setTimeout(() => (stop(), resolve(best)), 15000);
-      const stop = getStreams(addons, meta.type, next.id, (list, pending) => {
-        const playable = list.filter((s) => playableUrl(s));
-        const binge = group && playable.find((s) => s.behaviorHints?.bingeGroup === group);
-        if (binge) {
-          clearTimeout(timer);
-          stop();
-          return resolve(binge);
-        }
-        best =
-          playable.find((s) => s.addonId === stream.addonId && qualityOf(s) === q) ??
-          playable.find((s) => s.addonId === stream.addonId) ??
-          best ??
-          playable[0];
-        if (pending === 0) {
-          clearTimeout(timer);
-          resolve(best);
-        }
-      });
-    });
+    const found = await findNextStream(addons, meta.type, next.id, stream);
     setNextLoading(false);
     if (!found) {
       nav(`/detail/${encodeURIComponent(meta.type)}/${encodeURIComponent(meta.id)}?play=${encodeURIComponent(next.id)}`, { replace: true });
@@ -443,7 +418,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       stream: found,
       video: next,
       videoId: next.id,
-      subtitle: `${t('season')} ${next.season} · ${t('episode')} ${next.episode ?? next.number}${next.title || next.name ? ' — ' + (next.title || next.name) : ''}`,
+      subtitle: episodeLabel(next, t),
     });
   }, [next, meta, nextLoading, persist, stream, addons, startSession, session, t, nav]);
 
