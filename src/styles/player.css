@@ -159,8 +159,6 @@
   width: 60px;
   height: 60px;
   background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
 .p-bottom {
@@ -401,8 +399,6 @@
   padding: 12px;
   border-radius: 20px;
   background: rgba(22, 22, 28, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: toast-in 0.2s var(--ease);
@@ -517,8 +513,6 @@
   justify-content: center;
   gap: 18px;
   background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   font-family: var(--display);
   font-size: 26px;
   animation: fade-in 0.3s;

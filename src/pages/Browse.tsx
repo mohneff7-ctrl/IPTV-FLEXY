@@ -9,6 +9,7 @@ import { useAddons } from '../store/addons';
 import { cx } from '../lib/format';
 import { Hero } from '../components/Hero';
 import { CatalogRow } from '../components/Rows';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Empty, toast } from '../components/ui';
 import { IconPuzzle } from '../components/Icons';
 
@@ -84,12 +85,13 @@ export default function Browse() {
         </div>
       )}
       {shown.map((c) => (
-        <CatalogRow
-          key={c.key + (genre ?? '')}
-          cref={c}
-          genre={genre}
-          title={genre ? `${c.catalog.name ?? c.catalog.id} · ${genreLabel(genre, lang)}` : undefined}
-        />
+        <ErrorBoundary key={c.key + (genre ?? '')} silent>
+          <CatalogRow
+            cref={c}
+            genre={genre}
+            title={genre ? `${c.catalog.name ?? c.catalog.id} · ${genreLabel(genre, lang)}` : undefined}
+          />
+        </ErrorBoundary>
       ))}
     </div>
   );

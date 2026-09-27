@@ -3,7 +3,8 @@ import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useSettings } from './store/settings';
 import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
-import { Spinner, Toaster } from './components/ui';
+import { Empty, Spinner, Toaster } from './components/ui';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { setupAddonLinks, setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -36,6 +37,22 @@ function Layout() {
       {floatingHeader && <TopBar onMenu={() => setDrawer(true)} />}
       <Drawer open={drawer} onClose={() => setDrawer(false)} />
       <main className={showNav ? 'main with-nav' : 'main'}>
+        <ErrorBoundary
+          key={path}
+          fallback={
+            <div className="page page-pad">
+              <Empty
+                title="حدث خطأ في هذه الصفحة"
+                text="Something went wrong on this screen."
+                action={
+                  <button className="btn btn-primary" onClick={() => (location.hash = '#/')}>
+                    الرئيسية
+                  </button>
+                }
+              />
+            </div>
+          }
+        >
         <Suspense
           fallback={
             <div className="page center-fill">
@@ -58,6 +75,7 @@ function Layout() {
             <Route path="*" element={<Home />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
       {showNav && <BottomNav />}
       <Toaster />

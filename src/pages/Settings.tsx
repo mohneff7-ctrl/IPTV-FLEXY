@@ -26,7 +26,7 @@ import {
   IconUser,
 } from '../components/Icons';
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 
 function Row({ icon, title, desc, children }: { icon: ReactNode; title: string; desc?: string; children?: ReactNode }) {
   return (

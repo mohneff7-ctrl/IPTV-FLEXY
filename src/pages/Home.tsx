@@ -11,6 +11,7 @@ import type { Match } from '../lib/football';
 import { useSettings } from '../store/settings';
 import { useMemo, useState } from 'react';
 import { Empty, SectionTitle, SeeAll } from '../components/ui';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { IconBolt, IconLive, IconPuzzle } from '../components/Icons';
 
 export function PromoBanner({ to, title, text, cta, tone, icon }: { to: string; title: string; text: string; cta: string; tone: 'violet' | 'red'; icon: React.ReactNode }) {
@@ -119,12 +120,26 @@ export default function Home() {
   const rows = catalogs.filter((c) => c !== rankRef);
   return (
     <div className="page home">
-      <HeroFrom cref={heroRef} />
-      {showMatches && <MatchesRow />}
-      <ContinueRow />
-      {rankRef && <RankRow cref={rankRef} />}
+      <ErrorBoundary silent>
+        <HeroFrom cref={heroRef} />
+      </ErrorBoundary>
+      {showMatches && (
+        <ErrorBoundary silent>
+          <MatchesRow />
+        </ErrorBoundary>
+      )}
+      <ErrorBoundary silent>
+        <ContinueRow />
+      </ErrorBoundary>
+      {rankRef && (
+        <ErrorBoundary silent>
+          <RankRow cref={rankRef} />
+        </ErrorBoundary>
+      )}
       {rows.slice(0, 3).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       <PromoBanner
         to="/browse/anime"
@@ -135,7 +150,9 @@ export default function Home() {
         cta={t('watchNow')}
       />
       {rows.slice(3, 7).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       <PromoBanner
         to="/channels"
@@ -146,7 +163,9 @@ export default function Home() {
         cta={t('watchNow')}
       />
       {rows.slice(7).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
     </div>
   );

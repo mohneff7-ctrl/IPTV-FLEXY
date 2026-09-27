@@ -8,6 +8,7 @@ import { cx } from '../lib/format';
 import type { Channel } from '../lib/m3u';
 import { PageHeader } from '../components/Shell';
 import { CatalogRow } from '../components/Rows';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Empty, Img, SectionTitle, Sheet, Spinner, toast } from '../components/ui';
 import { IconLive, IconPlus, IconRefresh, IconSearch, IconTrash, IconTv } from '../components/Icons';
 
@@ -141,7 +142,9 @@ export default function Channels() {
       </section>
 
       {tvCatalogs.map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       {!tvCatalogs.length && playlists.length === 0 && (
         <Empty icon={<IconTv size={44} />} title={t('addonChannels')} text={t('noAddonsForTypeHint')} />

@@ -42,7 +42,7 @@ export async function exitPlayerMode() {
       import('@capacitor/screen-orientation'),
       import('@capacitor/status-bar'),
     ]);
-    await Promise.allSettled([ScreenOrientation.unlock(), StatusBar.show()]);
+    await Promise.allSettled([ScreenOrientation.lock({ orientation: 'portrait' }), StatusBar.show()]);
   } catch {
     /* plugin unavailable */
   }

@@ -41,7 +41,7 @@ export const usePlaylists = create<PlaylistState>()(
       add: async (name, url) => {
         const channels = parseM3U(await download(url));
         if (!channels.length) throw new Error('empty-playlist');
-        const pl: Playlist = { id: crypto.randomUUID(), name: name || new URL(url).hostname, url, channels, updatedAt: Date.now() };
+        const pl: Playlist = { id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pl-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: name || new URL(url).hostname, url, channels, updatedAt: Date.now() };
         set((s) => ({ playlists: [...s.playlists, pl] }));
         return pl;
       },
