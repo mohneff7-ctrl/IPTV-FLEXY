@@ -3212,3 +3212,177 @@ textarea,
 img {
   -webkit-user-drag: none;
 }
+
+/* ============================ Intro animation ============================ */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: #050507;
+  overflow: hidden;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.intro.leave {
+  opacity: 0;
+  transform: scale(1.06);
+  pointer-events: none;
+}
+
+.intro-glow {
+  position: absolute;
+  width: 140vmax;
+  height: 140vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(227, 7, 47, 0.32) 0%, rgba(227, 7, 47, 0.08) 28%, transparent 55%);
+  animation: intro-glow 2.6s ease-out both;
+}
+
+@keyframes intro-glow {
+  0% { opacity: 0; transform: scale(0.4); }
+  40% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.intro-stage {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+}
+
+.intro-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-outline path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: intro-draw 0.8s cubic-bezier(0.6, 0, 0.3, 1) 0.1s forwards, intro-fade 0.3s ease 0.95s forwards;
+  filter: drop-shadow(0 0 6px rgba(255, 45, 70, 0.9));
+}
+
+@keyframes intro-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes intro-fade {
+  to { opacity: 0; }
+}
+
+.intro-mark {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  opacity: 0;
+  transform: scale(0.6);
+  animation: intro-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.7s forwards;
+  filter: drop-shadow(0 14px 30px rgba(227, 7, 47, 0.55));
+}
+
+/* The light sweep is clipped to the play shape itself. */
+.intro-sweep-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 12 L20 88 L86 50 Z' fill='white' stroke='white' stroke-width='14' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 12 L20 88 L86 50 Z' fill='white' stroke='white' stroke-width='14' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@keyframes intro-pop {
+  to { opacity: 1; transform: scale(1); }
+}
+
+.intro-sweep {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 40%;
+  left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-18deg);
+  animation: intro-sweep 0.7s ease-in-out 1.55s forwards;
+}
+
+@keyframes intro-sweep {
+  to { left: 130%; }
+}
+
+.intro-word {
+  display: flex;
+  gap: 0.06em;
+  font-family: 'Cairo Variable', var(--font);
+  font-weight: 900;
+  font-size: 44px;
+  letter-spacing: 0.12em;
+  color: #fff;
+  line-height: 1;
+}
+
+.intro-word span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(18px);
+  animation: intro-letter 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+}
+
+.intro-word span.x {
+  color: #ff2d46;
+  text-shadow: 0 0 18px rgba(255, 45, 70, 0.8);
+}
+
+@keyframes intro-letter {
+  to { opacity: 1; transform: none; }
+}
+
+.intro-bar {
+  position: absolute;
+  bottom: calc(64px + var(--safe-b));
+  width: 120px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.intro-bar span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ff5a6e, #e3072f);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: intro-load 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+}
+
+@keyframes intro-load {
+  to { transform: scaleX(1); }
+}
+
+/* ============================ Player watermark ============================ */
+/* Small grey "FLEXY", top-left (physical), 50% opacity, never blocks touches. */
+.p-watermark {
+  position: absolute;
+  z-index: 4;
+  top: calc(14px + var(--safe-t));
+  left: calc(18px + env(safe-area-inset-left, 0px));
+  font-family: 'Cairo Variable', var(--font);
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  color: #9a9aa2;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  direction: ltr;
+}

@@ -564,6 +564,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       <video ref={videoRef} className={`fit-${fit}`} playsInline autoPlay preload="auto" poster={meta?.background} />
 
       <div className="p-surface" onClick={onSurfaceClick} />
+      <div className="p-watermark">FLEXY</div>
 
       {ripple && (
         <div className={cx('p-ripple', ripple.side === 'l' ? 'left' : 'right')}>

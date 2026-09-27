@@ -114,7 +114,7 @@ public class PlayerActivity extends AppCompatActivity {
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setPadding(dp(20), dp(14), dp(20), dp(28));
+        top.setPadding(dp(20), dp(34), dp(20), dp(28));
         top.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {0xCC000000, 0x00000000}));
 
         LinearLayout titles = new LinearLayout(this);
@@ -153,6 +153,20 @@ public class PlayerActivity extends AppCompatActivity {
         });
         top.addView(fit);
         root.addView(top, new FrameLayout.LayoutParams(-1, -2, Gravity.TOP));
+
+        // Brand watermark: small grey FLEXY, top-left, 50% opacity, always on screen.
+        TextView watermark = new TextView(this);
+        watermark.setText("FLEXY");
+        watermark.setTextColor(0xFF9A9AA2);
+        watermark.setAlpha(0.5f);
+        watermark.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        watermark.setLetterSpacing(0.14f);
+        watermark.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        watermark.setClickable(false);
+        watermark.setFocusable(false);
+        FrameLayout.LayoutParams wmParams = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.LEFT);
+        wmParams.setMargins(dp(20), dp(12), 0, 0);
+        root.addView(watermark, wmParams);
 
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
             top.setVisibility(visibility);

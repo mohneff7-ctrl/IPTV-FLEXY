@@ -5,6 +5,7 @@ import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
 import { Empty, Spinner, Toaster } from './components/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Intro } from './components/Intro';
 import { setupAddonLinks, setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -79,6 +80,7 @@ function Layout() {
       </main>
       {showNav && <BottomNav />}
       <Toaster />
+      <Intro />
     </div>
   );
 }
