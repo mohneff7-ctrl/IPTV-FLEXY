@@ -4,7 +4,7 @@ import { backgroundOf, posterOf, yearOf } from '../lib/stremio';
 import { useLibrary, type Progress } from '../store/library';
 import { useSettings } from '../store/settings';
 import { translate, typeLabel } from '../lib/i18n';
-import { formatTime } from '../lib/format';
+import { cx, formatTime } from '../lib/format';
 import { Img } from './ui';
 import { IconCheck, IconHeartFill, IconPlay, IconStar } from './Icons';
 
@@ -16,8 +16,9 @@ export function PosterCard({ meta, showInfo = true, showType }: { meta: MetaPrev
   const year = yearOf(meta);
   const country = meta.country?.split(',')[0];
   const landscape = meta.posterShape === 'landscape';
+  const withInfo = showInfo && !!(year || country);
   return (
-    <Link to={detailPath(meta.type, meta.id)} className={landscape ? 'poster-card landscape' : 'poster-card'}>
+    <Link to={detailPath(meta.type, meta.id)} className={cx('poster-card', landscape && 'landscape', withInfo && 'has-info')}>
       <div className="poster-frame">
         <Img src={posterOf(meta)} alt={meta.name} className="poster-img" fallback={<span className="poster-fallback">{meta.name}</span>} />
         <div className="poster-badges">
@@ -36,7 +37,7 @@ export function PosterCard({ meta, showInfo = true, showType }: { meta: MetaPrev
         <div className="poster-shade" />
         <span className="poster-title-in" dir="auto">{meta.name}</span>
       </div>
-      {showInfo && (year || country) && (
+      {withInfo && (
         <div className="poster-info">
           <span className="poster-name" dir="auto">{meta.name}</span>
           <span className="poster-meta">{[year, country].filter(Boolean).join(' • ')}</span>

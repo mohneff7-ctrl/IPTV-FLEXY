@@ -1067,8 +1067,8 @@ p {
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
-.poster-card:has(.poster-info) .poster-title-in,
-.poster-card:has(.poster-info) .poster-shade {
+.poster-card.has-info .poster-title-in,
+.poster-card.has-info .poster-shade {
   display: none;
 }
 

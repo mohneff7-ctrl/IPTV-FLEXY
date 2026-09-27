@@ -94,24 +94,29 @@ export function Rating({ value }: { value?: string }) {
   );
 }
 
+/**
+ * Image with a fade-in. Load/fail state is tracked per URL, so a cached image
+ * that finishes before React's effects run can never be left invisible.
+ */
 export function Img({ src, alt, className, fallback }: { src?: string; alt: string; className?: string; fallback?: ReactNode }) {
-  const [failed, setFailed] = useState(!src);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    setFailed(!src);
-    setLoaded(false);
-  }, [src]);
-  if (failed) return <div className={cx('img-fallback', className)}>{fallback ?? <span>{alt}</span>}</div>;
+  const [loadedSrc, setLoadedSrc] = useState<string>();
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const loaded = !!src && loadedSrc === src;
+  if (!src || failedSrc === src) return <div className={cx('img-fallback', className)}>{fallback ?? <span>{alt}</span>}</div>;
   return (
     <img
+      ref={(el) => {
+        // Already decoded (from cache) before onLoad could be observed.
+        if (el && el.complete && el.naturalWidth > 0 && loadedSrc !== src) setLoadedSrc(src);
+      }}
       src={src}
       alt={alt}
       className={cx(className, 'fade-img', loaded && 'loaded')}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onLoad={() => setLoaded(true)}
-      onError={() => setFailed(true)}
+      onLoad={() => setLoadedSrc(src)}
+      onError={() => setFailedSrc(src)}
     />
   );
 }
