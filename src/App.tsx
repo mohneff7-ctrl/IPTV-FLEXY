@@ -4,7 +4,7 @@ import { useSettings } from './store/settings';
 import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
 import { Spinner, Toaster } from './components/ui';
-import { setupBackButton, setupStatusBar } from './lib/native';
+import { setupAddonLinks, setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Detail from './pages/Detail';
@@ -72,6 +72,9 @@ export default function App() {
   useEffect(() => {
     bootstrap();
     setupStatusBar();
+    setupAddonLinks((url) => {
+      location.hash = `#/addons?install=${encodeURIComponent(url)}`;
+    });
     setupBackButton(() => {
       const atHome = ['', '#', '#/'].includes(location.hash);
       if (!atHome) history.back();

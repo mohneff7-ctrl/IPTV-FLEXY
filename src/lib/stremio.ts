@@ -16,15 +16,22 @@ import { isNative, nativeGetText } from './native';
 /* URLs                                                                */
 /* ------------------------------------------------------------------ */
 
-/** Accepts `stremio://…`, bare hosts, base URLs or full manifest URLs. */
+/**
+ * Accepts every way people share Stremio addons: `stremio://…`, bare hosts,
+ * base URLs, full manifest URLs, `/configure` pages and Stremio Web links
+ * (`…#/addons?addon=<encoded manifest url>`).
+ */
 export function normalizeManifestUrl(input: string): string {
-  let url = input.trim();
+  let url = input.trim().replace(/^["'<\s]+|["'>\s]+$/g, '');
   if (!url) throw new Error('empty');
+  const shared = /[?&]addon=([^&#]+)/.exec(url);
+  if (shared && /stremio/i.test(url)) url = decodeURIComponent(shared[1]);
   url = url.replace(/^stremio:\/\//i, 'https://');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   const u = new URL(url);
   if (!u.pathname.endsWith('/manifest.json')) {
-    u.pathname = u.pathname.replace(/\/+$/, '') + '/manifest.json';
+    u.pathname = u.pathname.replace(/\/+$/, '').replace(/\/configure$/i, '') + '/manifest.json';
+    u.hash = '';
   }
   return u.toString();
 }
@@ -186,7 +193,40 @@ export async function getCatalog(
   if (extra.skip) params.skip = extra.skip;
   const url = resourceUrl(addon, 'catalog', catalog.type, catalog.id, params);
   const data = await fetchJson<{ metas?: MetaPreview[] }>(url);
-  return (data.metas ?? []).filter((m) => m && m.id && m.name);
+  const metas = (data.metas ?? []).filter((m) => m && m.id && m.name);
+  metas.forEach((m) => rememberPreview({ ...m, type: m.type || catalog.type }, addon));
+  return metas;
+}
+
+/*
+ * Catalog previews, remembered so a title still opens when no installed addon
+ * has a `meta` resource for it (common with TV / IPTV addons). Stremio does
+ * the same: it falls back to the catalog's own preview.
+ */
+const PREVIEW_KEY = 'flexy.previews';
+const previews = new Map<string, { meta: MetaPreview; addonName: string }>();
+try {
+  const saved = JSON.parse(sessionStorage.getItem(PREVIEW_KEY) ?? '[]') as [string, { meta: MetaPreview; addonName: string }][];
+  saved.forEach(([k, v]) => previews.set(k, v));
+} catch {
+  /* private mode */
+}
+let persistTimer: ReturnType<typeof setTimeout> | undefined;
+
+function rememberPreview(meta: MetaPreview, addon: Addon) {
+  previews.set(`${meta.type}:${meta.id}`, { meta, addonName: addon.manifest.name });
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    try {
+      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify([...previews.entries()].slice(-800)));
+    } catch {
+      /* quota */
+    }
+  }, 500);
+}
+
+export function previewOf(type: string, id: string) {
+  return previews.get(`${type}:${id}`);
 }
 
 export async function getMeta(addons: Addon[], type: string, id: string): Promise<{ meta: Meta; addon: Addon } | null> {

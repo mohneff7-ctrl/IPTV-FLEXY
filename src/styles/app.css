@@ -3023,3 +3023,180 @@ input[type='range'] {
   background: var(--surface-3);
   margin-inline-start: auto;
 }
+
+/* ============================ No scrollbars anywhere ============================ */
+/* Scrolling still works everywhere (touch, wheel, keyboard); only the bars are hidden. */
+html,
+body,
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* ============================ Addons ============================ */
+
+.add-addon .btn-soft {
+  height: 50px;
+}
+
+.add-help {
+  padding: 4px var(--gutter) 0;
+  color: var(--text-3);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.addon-card.is-off {
+  opacity: 0.55;
+}
+
+.addon-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: start;
+}
+
+.addon-actions {
+  align-self: center;
+}
+
+.addon-logo.lg {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.install-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.install-head h3 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.addon-desc.full {
+  display: block;
+  -webkit-line-clamp: unset;
+  margin-bottom: 8px;
+}
+
+.role-head {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 18px;
+  margin: 16px 0 10px;
+}
+
+.role-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.role-list li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.role-ico {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.role-list strong {
+  font-size: 15px;
+}
+
+.role-list p {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+
+.install-url {
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-3);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.install-error {
+  padding: 24px 0;
+  text-align: center;
+  color: #ff8594;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+.catalog-list {
+  display: grid;
+  gap: 6px;
+}
+
+.catalog-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.catalog-item strong {
+  display: block;
+  font-size: 14.5px;
+}
+
+.catalog-item small {
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+
+.addon-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.addon-order-note,
+.addon-off-note {
+  color: var(--text-3);
+  font-size: 12.5px;
+  margin-top: 12px;
+}
+
+.addon-off-note {
+  color: var(--gold);
+  margin: 0 0 8px;
+}

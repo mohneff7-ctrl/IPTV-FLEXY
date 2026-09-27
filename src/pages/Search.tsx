@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { MetaPreview } from '../lib/types';
 import { catalogExtras, getCatalog } from '../lib/stremio';
-import { useAddons } from '../store/addons';
+import { useActiveAddons } from '../store/addons';
 import { useLibrary } from '../store/library';
 import { useSettings } from '../store/settings';
 import { typeLabel, useT } from '../lib/i18n';
@@ -20,7 +20,7 @@ interface Group {
 export default function Search() {
   const t = useT();
   const lang = useSettings((s) => s.lang);
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
   const { searches, addSearch, clearSearches } = useLibrary();
   const [params, setParams] = useSearchParams();
   const [input, setInput] = useState(params.get('q') ?? '');

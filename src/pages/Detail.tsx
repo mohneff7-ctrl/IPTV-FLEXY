@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Meta, MetaPreview, Video } from '../lib/types';
-import { backgroundOf, catalogExtras, genresOf, getCatalog, getMeta, logoOf, posterOf, trailerOf, yearOf } from '../lib/stremio';
-import { useAddons } from '../store/addons';
+import { backgroundOf, previewOf, catalogExtras, genresOf, getCatalog, getMeta, logoOf, posterOf, trailerOf, yearOf } from '../lib/stremio';
+import { useActiveAddons, useAddons } from '../store/addons';
 import { isWatched, useLibrary } from '../store/library';
 import { useSettings } from '../store/settings';
 import { usePlayback } from '../store/playback';
@@ -35,7 +35,7 @@ export default function Detail() {
   const nav = useNavigate();
   const t = useT();
   const lang = useSettings((s) => s.lang);
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
   const ready = useAddons((s) => s.ready);
   const { favorites, toggleFavorite, progress, markWatched } = useLibrary();
   const startPlayback = usePlayback((s) => s.start);
@@ -68,7 +68,14 @@ export default function Detail() {
     window.scrollTo(0, 0);
     getMeta(addons, type, id).then((r) => {
       if (!alive) return;
-      if (!r) return setState('missing');
+      if (!r) {
+        // No meta addon for this ID: use the catalog's own preview (like Stremio).
+        const p = previewOf(type, id);
+        if (!p) return setState('missing');
+        setMeta({ ...p.meta, type });
+        setSource(p.addonName);
+        return setState('ok');
+      }
       setMeta(r.meta);
       setSource(r.addon.manifest.name);
       setState('ok');

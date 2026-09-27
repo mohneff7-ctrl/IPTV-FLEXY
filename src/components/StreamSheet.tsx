@@ -12,7 +12,7 @@ import {
   streamTags,
   type Quality,
 } from '../lib/streams';
-import { useAddons } from '../store/addons';
+import { useActiveAddons } from '../store/addons';
 import { usePlayback } from '../store/playback';
 import { useSettings } from '../store/settings';
 import { useT } from '../lib/i18n';
@@ -72,7 +72,7 @@ export function StreamSheet({
   mode?: 'watch' | 'download';
 }) {
   const t = useT();
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
   const preferred = useSettings((s) => s.preferredQuality);
   const [streams, setStreams] = useState<SourcedStream[]>([]);
   const [pending, setPending] = useState(0);

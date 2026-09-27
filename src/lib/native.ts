@@ -48,6 +48,15 @@ export async function exitPlayerMode() {
   }
 }
 
+/** stremio://…/manifest.json links (addon "Install" buttons) open the install sheet. */
+export async function setupAddonLinks(open: (manifestUrl: string) => void) {
+  if (!isNative()) return;
+  const { App } = await import('@capacitor/app');
+  const handle = (url?: string) => url && /^stremio:/i.test(url) && open(url);
+  App.addListener('appUrlOpen', (e) => handle(e.url));
+  App.getLaunchUrl().then((l) => handle(l?.url)).catch(() => undefined);
+}
+
 /** Android hardware back button → in-app navigation, exit on the home screen. */
 export async function setupBackButton(goBack: () => boolean) {
   if (!isNative()) return;

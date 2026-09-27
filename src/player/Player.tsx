@@ -4,7 +4,7 @@ import type { SourcedStream, Video } from '../lib/types';
 import { usePlayback, type PlaybackSession } from '../store/playback';
 import { isWatched, useLibrary } from '../store/library';
 import { useSettings, type FitMode } from '../store/settings';
-import { useAddons } from '../store/addons';
+import { useActiveAddons } from '../store/addons';
 import { getStreams, getSubtitles } from '../lib/stremio';
 import { externalPlayerUrl, playableUrl, qualityOf } from '../lib/streams';
 import { activeCues, langName, loadSubtitle, type Cue } from '../lib/subtitles';
@@ -90,7 +90,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   const t = useT();
   const nav = useNavigate();
   const settings = useSettings();
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
   const startSession = usePlayback((s) => s.start);
   const saveProgress = useLibrary((s) => s.saveProgress);
 

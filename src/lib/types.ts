@@ -53,6 +53,8 @@ export interface Addon {
   manifest: Manifest;
   /** Built-in addons cannot be removed (they keep the app usable). */
   protected?: boolean;
+  /** Turned off by the user: kept installed but ignored everywhere. */
+  disabled?: boolean;
 }
 
 export interface Video {
