@@ -126,7 +126,7 @@ export function TopBar({ onMenu, solid }: { onMenu: () => void; solid?: boolean 
         <Link to="/search" className="icon-btn" aria-label={t('search')}>
           <IconSearch size={25} />
         </Link>
-        <Link to="/favorites" className="icon-btn" aria-label={t('favorites')}>
+        <Link to="/favorites" className="icon-btn hide-xs" aria-label={t('favorites')}>
           <IconHeart size={25} />
         </Link>
         <Link to="/settings" className="icon-btn" aria-label={t('settings')}>

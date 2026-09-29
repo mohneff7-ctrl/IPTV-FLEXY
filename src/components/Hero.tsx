@@ -4,10 +4,13 @@ import type { MetaPreview } from '../lib/types';
 import { backgroundOf, genresOf, logoOf, posterOf, yearOf } from '../lib/stremio';
 import { genreLabel, useT } from '../lib/i18n';
 import { useSettings } from '../store/settings';
+import { useLibrary } from '../store/library';
 import { cx } from '../lib/format';
 import { detailPath } from './Cards';
-import { Img, Rating } from './ui';
-import { IconPlay } from './Icons';
+import { Img, Rating, toast } from './ui';
+import { IconCheck, IconInfo, IconPlay, IconPlus } from './Icons';
+
+const INTERVAL = 7000;
 
 export function Hero({ items }: { items: MetaPreview[] | null }) {
   const [index, setIndex] = useState(0);
@@ -19,9 +22,9 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
 
   useEffect(() => {
     if (paused || list.length < 2) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % list.length), 7000);
-    return () => clearInterval(id);
-  }, [paused, list.length]);
+    const id = setTimeout(() => setIndex((i) => (i + 1) % list.length), INTERVAL);
+    return () => clearTimeout(id);
+  }, [paused, list.length, index]);
 
   // Preload the next backdrop so transitions are instant.
   useEffect(() => {
@@ -37,7 +40,8 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
 
   return (
     <section
-      className="hero"
+      className={cx('hero', paused && 'paused')}
+      style={{ '--hero-interval': `${INTERVAL}ms` } as React.CSSProperties}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
@@ -67,9 +71,15 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
                   {yearOf(m) && <span>{yearOf(m)}</span>}
                   {(m as { status?: string }).status === 'Continuing' && <span className="pill pill-green">{t('ongoing')}</span>}
                 </div>
-                <Link to={detailPath(m.type, m.id)} className="btn btn-primary hero-cta" tabIndex={active ? 0 : -1}>
-                  <IconPlay size={18} /> {t('watch')}
-                </Link>
+                <div className="hero-actions">
+                  <Link to={detailPath(m.type, m.id)} className="btn btn-primary hero-cta" tabIndex={active ? 0 : -1}>
+                    <IconPlay size={18} /> {t('watch')}
+                  </Link>
+                  <FavButton meta={m} tabIndex={active ? 0 : -1} />
+                  <Link to={detailPath(m.type, m.id)} className="btn btn-glass hero-icon-btn" aria-label={t('moreInfo')} tabIndex={active ? 0 : -1}>
+                    <IconInfo size={20} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -77,7 +87,9 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
       })}
       <div className="hero-dots">
         {list.map((m, i) => (
-          <button key={m.id} className={cx('dot', i === index && 'active')} onClick={() => setIndex(i)} aria-label={`${i + 1}`} />
+          <button key={m.id} className={cx('dot', i === index && 'active')} onClick={() => setIndex(i)} aria-label={`${i + 1}`}>
+            {i === index && <span key={index} className="dot-fill" />}
+          </button>
         ))}
       </div>
     </section>
@@ -94,4 +106,19 @@ function HeroTitle({ meta }: { meta: MetaPreview }) {
       </h2>
     );
   return <h2 className="hero-title">{meta.name}</h2>;
+}
+
+function FavButton({ meta, tabIndex }: { meta: MetaPreview; tabIndex: number }) {
+  const t = useT();
+  const fav = useLibrary((s) => !!s.favorites[meta.id]);
+  const toggle = useLibrary((s) => s.toggleFavorite);
+  return (
+    <button
+      className={cx('btn btn-glass', fav && 'on')}
+      tabIndex={tabIndex}
+      onClick={() => toast(t(toggle(meta) ? 'addedToFav' : 'removedFromFav'))}
+    >
+      {fav ? <IconCheck size={18} /> : <IconPlus size={18} />} {t('myList')}
+    </button>
+  );
 }

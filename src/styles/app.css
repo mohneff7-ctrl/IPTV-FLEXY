@@ -259,7 +259,14 @@ p {
 }
 
 .topbar-logo {
-  display: none;
+  display: block;
+  margin-inline-start: 2px;
+}
+
+@media (max-width: 480px) {
+  .hide-xs {
+    display: none !important;
+  }
 }
 
 .topbar-links {
@@ -277,7 +284,7 @@ p {
     display: none;
   }
   .topbar-logo {
-    display: block;
+    margin-inline-start: 0;
   }
   .topbar-links {
     display: flex;
@@ -571,6 +578,32 @@ p {
   transform: scale(0.97);
 }
 
+.btn:disabled {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-3);
+  box-shadow: none;
+  border-color: var(--line);
+}
+
+/* Frosted secondary action over artwork. */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-glass.on {
+  background: rgba(230, 32, 61, 0.25);
+  border-color: rgba(230, 32, 61, 0.55);
+}
+
 .btn.sm {
   height: 36px;
   padding: 0 14px;
@@ -691,8 +724,10 @@ p {
 .spinner {
   display: inline-block;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.15);
-  border-top-color: var(--red);
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: #ff4a63;
+  border-inline-end-color: rgba(230, 32, 61, 0.5);
+  filter: drop-shadow(0 0 6px rgba(230, 32, 61, 0.6));
   animation: spin 0.8s linear infinite;
   flex: none;
 }
@@ -704,7 +739,7 @@ p {
 }
 
 .skeleton {
-  background: linear-gradient(100deg, var(--surface) 30%, var(--surface-2) 50%, var(--surface) 70%);
+  background: linear-gradient(100deg, var(--surface) 30%, #2c1219 50%, var(--surface) 70%);
   background-size: 300% 100%;
   animation: shimmer 1.4s infinite linear;
   border-radius: var(--radius);
@@ -922,17 +957,35 @@ p {
 }
 
 .see-all {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
   color: var(--text-2);
-  font-family: var(--display);
-  font-weight: var(--display-w);
-  letter-spacing: -0.01em;
-  font-size: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 700;
   white-space: nowrap;
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.see-all::after {
+  content: '›';
+  margin-inline-start: 6px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+[dir='rtl'] .see-all::after {
+  content: '‹';
 }
 
 .see-all:hover {
-  color: var(--red);
+  color: #fff;
+  background: var(--red-soft);
+  border-color: rgba(230, 32, 61, 0.4);
 }
 
 .row-scroll {
@@ -1025,6 +1078,15 @@ p {
 
 .poster-card.landscape {
   width: var(--wide-w);
+}
+
+.poster-card:active .poster-frame,
+.rank-card:active .poster-frame,
+.wide-card:active,
+.channel-card:active,
+.genre-tile:active {
+  transform: scale(0.97);
+  transition-duration: 0.1s;
 }
 
 .poster-frame {
@@ -1483,17 +1545,94 @@ p {
 }
 
 .dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
   transition: width 0.35s var(--ease), background 0.35s;
 }
 
 .dot.active {
-  width: 26px;
+  width: 30px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* The active dot fills up while the slide is on screen (a visible timer). */
+.dot-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: #fff;
   box-shadow: 0 0 10px rgba(230, 32, 61, 0.9);
+  transform-origin: left;
+  animation: dot-fill var(--hero-interval, 7s) linear both;
+}
+
+[dir='rtl'] .dot-fill {
+  transform-origin: right;
+}
+
+.hero.paused .dot-fill {
+  animation-play-state: paused;
+}
+
+@keyframes dot-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.hero-actions .hero-cta {
+  margin-top: 0;
+}
+
+.hero-icon-btn {
+  width: 46px;
+  padding: 0;
+}
+
+/* Phones: a centred, poster-free composition (the artwork is the poster). */
+@media (max-width: 699px) {
+  .hero {
+    height: min(80vh, 640px);
+  }
+  .hero-poster {
+    display: none;
+  }
+  .hero-content {
+    justify-content: center;
+    bottom: 44px;
+  }
+  .hero-text {
+    align-items: center;
+    text-align: center;
+  }
+  .hero-meta {
+    justify-content: center;
+    font-size: 14px;
+  }
+  .hero-genres {
+    font-size: 14px;
+  }
+  .hero-logo {
+    max-width: 72vw;
+    max-height: 100px;
+  }
+  .hero-actions .btn {
+    height: 44px;
+  }
+  .hero-actions .hero-cta {
+    min-width: 132px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -1874,6 +2013,59 @@ p {
 
 .recent {
   padding-top: 18px;
+}
+
+.search-hint {
+  padding: 28px var(--gutter);
+  text-align: center;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+.genre-head {
+  padding: 0 var(--gutter) 14px;
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 0 var(--gutter);
+}
+
+.genre-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 76px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  isolation: isolate;
+  font-weight: 800;
+  font-size: 16px;
+  /* Each tile gets its own shade of the crimson family (hue 332..366). */
+  background: linear-gradient(135deg, hsl(calc(332deg + var(--hue) * 1deg) 72% 36%), hsl(calc(340deg + var(--hue) * 1deg) 78% 13%));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 24px -16px rgba(0, 0, 0, 0.9);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s;
+}
+
+.genre-tile::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 90px;
+  height: 90px;
+  inset-inline-end: -24px;
+  top: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 70%);
+}
+
+.genre-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -14px rgba(230, 32, 61, 0.6);
 }
 
 .recent-head {
@@ -2443,6 +2635,24 @@ select {
 .set-input input:focus,
 select:focus {
   border-color: var(--red);
+  box-shadow: 0 0 0 4px rgba(230, 32, 61, 0.15);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(230, 32, 61, 0.15);
+}
+
+.search-box input:focus-visible {
+  box-shadow: none;
+}
+
+input[type='range']:focus-visible {
+  box-shadow: none;
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 4px;
 }
 
 .add-addon .btn {

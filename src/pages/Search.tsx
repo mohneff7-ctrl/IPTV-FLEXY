@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { MetaPreview } from '../lib/types';
 import { catalogExtras, getCatalog } from '../lib/stremio';
 import { useAddons } from '../store/addons';
 import { useLibrary } from '../store/library';
 import { useSettings } from '../store/settings';
-import { typeLabel, useT } from '../lib/i18n';
+import { genreLabel, typeLabel, useT } from '../lib/i18n';
+import { useCatalogs } from '../lib/hooks';
 import { PageHeader } from '../components/Shell';
-import { MetaRow } from '../components/Rows';
+import { catalogPath, MetaRow } from '../components/Rows';
 import { Empty } from '../components/ui';
 import { IconClose, IconSearch } from '../components/Icons';
 
@@ -105,11 +106,33 @@ export default function Search() {
           </div>
         </div>
       )}
-      {!q && !searches.length && <Empty icon={<IconSearch size={48} />} title={t('typeToSearch')} />}
+      {!q && <GenreGrid />}
+      {!q && !searches.length && <p className="search-hint">{t('typeToSearch')}</p>}
       {groups.map((g) => (
         <MetaRow key={g.key} title={g.title} items={g.items} />
       ))}
       {noResults && <Empty title={t('noResults')} />}
     </div>
+  );
+}
+
+/** Empty-state discovery: one tile per genre of the first movie catalog that offers genres. */
+function GenreGrid() {
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  const [ref] = useCatalogs((c) => c.type === 'movie' && catalogExtras(c).genreOptions.length > 0);
+  if (!ref) return null;
+  const genres = catalogExtras(ref.catalog).genreOptions.slice(0, 16);
+  return (
+    <section className="section">
+      <h2 className="section-title genre-head">{t('browseByGenre')}</h2>
+      <div className="genre-grid">
+        {genres.map((g, i) => (
+          <Link key={g} to={catalogPath(ref, g)} className="genre-tile" style={{ '--hue': (i * 13) % 34 } as React.CSSProperties}>
+            <span>{genreLabel(g, lang)}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
