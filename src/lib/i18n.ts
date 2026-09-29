@@ -114,6 +114,12 @@ const dict = {
   profile: ['الملف الشخصي', 'Profile'],
   profileName: ['الاسم', 'Name'],
   player: ['المشغل', 'Player'],
+  nativePlayer: ['المشغل الأصلي السريع', 'Fast native player'],
+  nativePlayerDesc: [
+    'مشغل أندرويد (ExoPlayer): تشغيل فوري بجودة عالية حتى 1080p وأكثر، ويشغّل كل الصيغ والبث المباشر.',
+    'Android ExoPlayer: instant start, high quality up to 1080p and beyond, plays every format and live stream.',
+  ],
+  nativeFallback: ['تعذّر التشغيل بالمشغل الأصلي، جارٍ المحاولة بالمشغل المدمج…', 'Native player failed, trying the built-in player…'],
   autoplayNext: ['تشغيل الحلقة التالية تلقائياً', 'Autoplay next episode'],
   autoplayNextDesc: ['ينتقل المشغل للحلقة التالية عند انتهاء الحالية.', 'Jump to the next episode when the current one ends.'],
   resumePlayback: ['استكمال المشاهدة', 'Resume playback'],

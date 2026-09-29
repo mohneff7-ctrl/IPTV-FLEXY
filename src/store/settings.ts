@@ -9,6 +9,8 @@ export type SubtitleEdge = 'shadow' | 'outline' | 'none';
 
 export interface Settings {
   lang: Lang;
+  /** Android only: play through ExoPlayer instead of the WebView <video>. */
+  nativePlayer: boolean;
   autoplayNext: boolean;
   resumePlayback: boolean;
   subtitleLang: string;
@@ -47,6 +49,7 @@ export const useSettings = create<Settings>()(
   persist(
     (set) => ({
       lang: 'ar',
+      nativePlayer: true,
       autoplayNext: true,
       resumePlayback: true,
       subtitleLang: 'ara',

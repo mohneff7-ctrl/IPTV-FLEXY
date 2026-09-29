@@ -30,6 +30,14 @@
 
         </activity>
 
+        <!-- Native ExoPlayer screen (launched by the NativePlayer plugin). -->
+        <activity
+            android:name=".PlayerActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/PlayerTheme" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -44,6 +52,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Android TV support (D-pad friendly UI, no touchscreen required). -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

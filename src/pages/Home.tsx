@@ -4,6 +4,7 @@ import { useT } from '../lib/i18n';
 import { useAddons } from '../store/addons';
 import { continueWatching, useLibrary } from '../store/library';
 import { Hero } from '../components/Hero';
+import { RowBoundary } from '../components/ErrorBoundary';
 import { CatalogRow, RankRow, Row, SkeletonRow } from '../components/Rows';
 import { ProgressCard } from '../components/Cards';
 import { Empty, SectionTitle } from '../components/ui';
@@ -24,6 +25,14 @@ export function PromoBanner({ to, title, text, cta, tone, icon }: { to: string; 
 }
 
 export function ContinueRow() {
+  return (
+    <RowBoundary>
+      <ContinueRowView />
+    </RowBoundary>
+  );
+}
+
+function ContinueRowView() {
   const t = useT();
   const progress = useLibrary((s) => s.progress);
   const items = continueWatching(progress);

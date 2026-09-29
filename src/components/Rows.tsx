@@ -5,6 +5,7 @@ import { typeLabel, useT } from '../lib/i18n';
 import { useSettings } from '../store/settings';
 import { PosterCard, RankCard } from './Cards';
 import { SectionTitle, SeeAll } from './ui';
+import { RowBoundary } from './ErrorBoundary';
 
 export function catalogTitle(ref: CatalogRef, lang: 'ar' | 'en') {
   const name = ref.catalog.name || ref.catalog.id;
@@ -30,14 +31,29 @@ export function SkeletonRow({ wide }: { wide?: boolean }) {
   );
 }
 
-export function MetaRow({ title, sub, items, action }: { title: ReactNode; sub?: ReactNode; items: MetaPreview[] | null; action?: ReactNode }) {
+/** Horizontal rows show a preview; the full catalog lives behind "See all". */
+const ROW_LIMIT = 30;
+
+function MetaRowView({
+  title,
+  sub,
+  items,
+  action,
+  limit,
+}: {
+  title: ReactNode;
+  sub?: ReactNode;
+  items: MetaPreview[] | null;
+  action?: ReactNode;
+  limit?: number;
+}) {
   if (items && !items.length) return null;
   return (
     <section className="section">
       <SectionTitle title={title} sub={sub} action={action} />
       {items ? (
         <Row>
-          {items.map((m) => (
+          {(limit ? items.slice(0, limit) : items).map((m) => (
             <PosterCard key={m.id} meta={m} />
           ))}
         </Row>
@@ -49,7 +65,7 @@ export function MetaRow({ title, sub, items, action }: { title: ReactNode; sub?:
 }
 
 /** A lazily-loaded row for one addon catalog. */
-export function CatalogRow({ cref, title, genre }: { cref: CatalogRef; title?: string; genre?: string }) {
+function CatalogRowView({ cref, title, genre }: { cref: CatalogRef; title?: string; genre?: string }) {
   const [ref, visible] = useLazyVisible<HTMLDivElement>();
   const lang = useSettings((s) => s.lang);
   const t = useT();
@@ -57,16 +73,17 @@ export function CatalogRow({ cref, title, genre }: { cref: CatalogRef; title?: s
   if (visible && items && !items.length) return null;
   return (
     <div ref={ref} className="lazy-row">
-      <MetaRow
+      <MetaRowView
         title={title ?? catalogTitle(cref, lang)}
         items={visible ? items : null}
+        limit={ROW_LIMIT}
         action={<SeeAll to={catalogPath(cref, genre)} label={t('seeAll')} />}
       />
     </div>
   );
 }
 
-export function RankRow({ cref }: { cref: CatalogRef }) {
+function RankRowView({ cref }: { cref: CatalogRef }) {
   const t = useT();
   const { items } = useCatalogItems(cref);
   if (items && !items.length) return null;
@@ -83,5 +100,31 @@ export function RankRow({ cref }: { cref: CatalogRef }) {
         <SkeletonRow />
       )}
     </section>
+  );
+}
+
+/* Each row is isolated: if an addon sends data that breaks it, only that row
+   disappears instead of the whole page going blank. */
+export function MetaRow(props: Parameters<typeof MetaRowView>[0]) {
+  return (
+    <RowBoundary>
+      <MetaRowView {...props} />
+    </RowBoundary>
+  );
+}
+
+export function CatalogRow(props: Parameters<typeof CatalogRowView>[0]) {
+  return (
+    <RowBoundary>
+      <CatalogRowView {...props} />
+    </RowBoundary>
+  );
+}
+
+export function RankRow(props: Parameters<typeof RankRowView>[0]) {
+  return (
+    <RowBoundary>
+      <RankRowView {...props} />
+    </RowBoundary>
   );
 }

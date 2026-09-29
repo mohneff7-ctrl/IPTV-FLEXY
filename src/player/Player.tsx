@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Meta, SourcedStream, Video } from '../lib/types';
+import type { Addon, Meta, SourcedStream, Video } from '../lib/types';
 import { usePlayback, type PlaybackSession } from '../store/playback';
 import { isWatched, useLibrary } from '../store/library';
 import { useSettings, type FitMode } from '../store/settings';
@@ -8,11 +8,12 @@ import { useAddons } from '../store/addons';
 import { getStreams, getSubtitles, logoOf } from '../lib/stremio';
 import { externalPlayerUrl, playableUrl, qualityOf } from '../lib/streams';
 import { activeCues, langName, loadSubtitle, type Cue } from '../lib/subtitles';
-import { useT } from '../lib/i18n';
+import { useT, type I18nKey } from '../lib/i18n';
 import { cx, formatTime } from '../lib/format';
 import { createEngine, engineOrder, type Engine } from './engine';
 import { SeekBar } from './SeekBar';
 import { enterPlayerMode, exitPlayerMode } from '../lib/native';
+import { NativePlayer, nativePlayerAvailable, type NativePlayOptions } from '../lib/nativePlayer';
 import { Spinner, toast } from '../components/ui';
 import { SubtitleStyleControls } from '../components/SubtitleStyle';
 import { subtitleVars } from '../lib/subtitleStyle';
@@ -86,15 +87,185 @@ function nextVideo(videos: Video[] | undefined, current?: Video): Video | undefi
   return i >= 0 ? order[i + 1] : undefined;
 }
 
+/** Finds the best stream for the next episode (same bingeGroup first, like Stremio). */
+function findNextStream(addons: Addon[], meta: Meta, next: Video, current: SourcedStream): Promise<SourcedStream | undefined> {
+  return new Promise((resolve) => {
+    const group = current.behaviorHints?.bingeGroup;
+    const q = qualityOf(current);
+    let best: SourcedStream | undefined;
+    const timer = setTimeout(() => (stop(), resolve(best)), 15000);
+    const stop = getStreams(addons, meta.type, next.id, (list, pending) => {
+      const playable = list.filter((s) => playableUrl(s));
+      const binge = group && playable.find((s) => s.behaviorHints?.bingeGroup === group);
+      if (binge) {
+        clearTimeout(timer);
+        stop();
+        return resolve(binge);
+      }
+      best =
+        playable.find((s) => s.addonId === current.addonId && qualityOf(s) === q) ??
+        playable.find((s) => s.addonId === current.addonId) ??
+        best ??
+        playable[0];
+      if (pending === 0) {
+        clearTimeout(timer);
+        resolve(best);
+      }
+    });
+  });
+}
+
+function episodeSubtitle(t: (k: I18nKey) => string, v: Video) {
+  return `${t('season')} ${v.season} · ${t('episode')} ${v.episode ?? v.number}${v.title || v.name ? ' — ' + (v.title || v.name) : ''}`;
+}
+
+function progressEntry(session: PlaybackSession, meta: Meta, time: number, duration: number) {
+  const { video } = session;
+  return {
+    videoId: session.videoId,
+    metaId: meta.id,
+    type: meta.type,
+    name: meta.name,
+    poster: meta.poster,
+    background: meta.background,
+    thumbnail: video?.thumbnail,
+    season: video?.season,
+    episode: video?.episode ?? video?.number,
+    episodeTitle: video?.title ?? video?.name,
+    time,
+    duration,
+  };
+}
+
+const sessionKey = (s: PlaybackSession) => s.videoId + (s.stream.url ?? s.stream.infoHash);
+
 export default function Player() {
   const session = usePlayback((s) => s.session);
+  const nativeEnabled = useSettings((s) => s.nativePlayer);
+  // Sessions the native player gave up on get the web engines instead.
+  const [webFallback, setWebFallback] = useState<string | null>(null);
   const nav = useNavigate();
   useEffect(() => {
     if (!session) nav('/', { replace: true });
   }, [session, nav]);
   if (!session) return null;
   if (session.stream.ytId) return <YouTubePlayer session={session} />;
-  return <VideoPlayer key={session.videoId + (session.stream.url ?? session.stream.infoHash)} session={session} />;
+  const key = sessionKey(session);
+  if (nativeEnabled && nativePlayerAvailable() && webFallback !== key && playableUrl(session.stream)) {
+    return <NativeVideoPlayer key={key} session={session} onFail={() => setWebFallback(key)} />;
+  }
+  return <VideoPlayer key={key} session={session} />;
+}
+
+/**
+ * Hands playback to the Android ExoPlayer screen (hardware decoding, every
+ * format, 1080p+) and handles what happens after it closes: progress, the
+ * next episode, or falling back to the web player.
+ */
+function NativeVideoPlayer({ session, onFail }: { session: PlaybackSession; onFail: () => void }) {
+  const t = useT();
+  const nav = useNavigate();
+  const [loadingNext, setLoadingNext] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    let removeListener: (() => void) | undefined;
+    const settings = useSettings.getState();
+    const { addons } = useAddons.getState();
+    const { stream, meta, video } = session;
+    const url = playableUrl(stream)!;
+    const trackProgress = !!meta && !session.videoId.startsWith('trailer:');
+    const save = (time: number, duration: number) => {
+      if (!meta || !trackProgress || !isFinite(duration) || duration < 30 || time < 5) return;
+      useLibrary.getState().saveProgress(progressEntry(session, meta, time, duration));
+    };
+
+    const collectSubtitles = async (): Promise<NativePlayOptions['subtitles']> => {
+      const label = (lang: string, from: string) => `${langName(lang, settings.lang)} · ${from}`;
+      const embedded = (stream.subtitles ?? []).map((s) => ({ url: s.url, lang: s.lang, label: label(s.lang, stream.addonName) }));
+      if (!meta) return embedded;
+      // Don't hold the video back for slow subtitle addons.
+      const extra = await Promise.race([
+        getSubtitles(addons, meta.type, session.videoId, {
+          videoSize: stream.behaviorHints?.videoSize,
+          filename: stream.behaviorHints?.filename,
+        }).catch(() => []),
+        new Promise<[]>((r) => setTimeout(() => r([]), 2500)),
+      ]);
+      return [...embedded, ...extra.map((s) => ({ url: s.url, lang: s.lang, label: label(s.lang, s.addonName) }))];
+    };
+
+    (async () => {
+      const subtitles = await collectSubtitles();
+      let startPosition = 0;
+      if (trackProgress && settings.resumePlayback) {
+        const saved = useLibrary.getState().progress[session.videoId];
+        if (saved && !isWatched(saved) && saved.time > 10) startPosition = saved.time - 3;
+      }
+      if (!alive) return;
+      const handle = await NativePlayer.addListener('progress', (p) => save(p.position, p.duration));
+      removeListener = () => handle.remove();
+      if (!alive) return removeListener();
+      const q = settings.preferredQuality;
+      const result = await NativePlayer.play({
+        url,
+        title: meta?.name ?? session.title,
+        subtitle: session.subtitle,
+        startPosition,
+        live: session.type === 'tv' || session.type === 'channel',
+        headers: stream.behaviorHints?.proxyHeaders?.request,
+        subtitles,
+        subtitleLang: settings.subtitleLang,
+        subtitleSize: settings.subtitleSize,
+        subtitleColor: settings.subtitleColor,
+        subtitleBgColor: settings.subtitleBgColor,
+        subtitleBgOpacity: settings.subtitleBgOpacity,
+        subtitleEdge: settings.subtitleEdge,
+        subtitleBold: settings.subtitleBold,
+        seekStep: settings.seekStep,
+        resizeMode: settings.fitMode === 'cover' ? 'zoom' : settings.fitMode === 'fill' ? 'fill' : 'fit',
+        maxHeight: settings.streamQuality === 'saver' || q === '480p' ? 480 : q === '720p' ? 720 : 0,
+        capToScreen: settings.streamQuality === 'auto',
+      }).catch((e) => ({ position: 0, duration: 0, ended: false, error: String(e) }));
+      removeListener();
+      if (!alive) return;
+      if (result.duration > 0) save(result.ended ? result.duration : result.position, result.duration);
+      if (result.error) {
+        toast(t('nativeFallback'));
+        onFail();
+        return;
+      }
+      const next = nextVideo(meta?.videos, video);
+      if (result.ended && next && meta && settings.autoplayNext) {
+        setLoadingNext(true);
+        const found = await findNextStream(addons, meta, next, stream);
+        if (!alive) return;
+        if (found) {
+          usePlayback.getState().start({ ...session, stream: found, video: next, videoId: next.id, subtitle: episodeSubtitle(t, next) });
+        } else {
+          nav(`/detail/${encodeURIComponent(meta.type)}/${encodeURIComponent(meta.id)}?play=${encodeURIComponent(next.id)}`, { replace: true });
+        }
+        return;
+      }
+      history.length > 1 ? nav(-1) : nav('/');
+    })();
+
+    return () => {
+      alive = false;
+      removeListener?.();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="player native-launch" dir="auto">
+      {session.poster && <img className="native-launch-bg" src={session.poster} alt="" />}
+      <div className="native-launch-info">
+        <Spinner size={46} />
+        <strong>{loadingNext ? t('nextEpisode') : session.title}</strong>
+        {!loadingNext && session.subtitle && <span>{session.subtitle}</span>}
+      </div>
+    </div>
+  );
 }
 
 function YouTubePlayer({ session }: { session: PlaybackSession }) {
@@ -234,21 +405,8 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   const persist = useCallback(() => {
     const { time: at, duration: total } = pos.current;
     if (!meta || !trackProgress || !isFinite(total) || total < 30 || at < 5) return;
-    saveProgress({
-      videoId: session.videoId,
-      metaId: meta.id,
-      type: meta.type,
-      name: meta.name,
-      poster: meta.poster,
-      background: meta.background,
-      thumbnail: video?.thumbnail,
-      season: video?.season,
-      episode: video?.episode ?? video?.number,
-      episodeTitle: video?.title ?? video?.name,
-      time: at,
-      duration: total,
-    });
-  }, [meta, video, session.videoId, saveProgress, trackProgress]);
+    saveProgress(progressEntry(session, meta, at, total));
+  }, [meta, session, saveProgress, trackProgress]);
 
   useEffect(() => {
     const id = setInterval(() => !videoRef.current?.paused && persist(), 5000);
@@ -468,49 +626,19 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
     else nav(-1);
   };
 
-  /** Finds the best stream for the next episode (same bingeGroup first, like Stremio). */
   const playNext = useCallback(async () => {
     if (!next || !meta || nextLoading) return;
     setNextLoading(true);
     setCountdown(null);
     persist();
-    const found = await new Promise<SourcedStream | undefined>((resolve) => {
-      const group = stream.behaviorHints?.bingeGroup;
-      const q = qualityOf(stream);
-      let best: SourcedStream | undefined;
-      const timer = setTimeout(() => (stop(), resolve(best)), 15000);
-      const stop = getStreams(addons, meta.type, next.id, (list, pending) => {
-        const playable = list.filter((s) => playableUrl(s));
-        const binge = group && playable.find((s) => s.behaviorHints?.bingeGroup === group);
-        if (binge) {
-          clearTimeout(timer);
-          stop();
-          return resolve(binge);
-        }
-        best =
-          playable.find((s) => s.addonId === stream.addonId && qualityOf(s) === q) ??
-          playable.find((s) => s.addonId === stream.addonId) ??
-          best ??
-          playable[0];
-        if (pending === 0) {
-          clearTimeout(timer);
-          resolve(best);
-        }
-      });
-    });
+    const found = await findNextStream(addons, meta, next, stream);
     setNextLoading(false);
     if (!found) {
       nav(`/detail/${encodeURIComponent(meta.type)}/${encodeURIComponent(meta.id)}?play=${encodeURIComponent(next.id)}`, { replace: true });
       return;
     }
     carriedSleep = sleep;
-    startSession({
-      ...session,
-      stream: found,
-      video: next,
-      videoId: next.id,
-      subtitle: `${t('season')} ${next.season} · ${t('episode')} ${next.episode ?? next.number}${next.title || next.name ? ' — ' + (next.title || next.name) : ''}`,
-    });
+    startSession({ ...session, stream: found, video: next, videoId: next.id, subtitle: episodeSubtitle(t, next) });
   }, [next, meta, nextLoading, persist, stream, addons, startSession, session, t, nav, sleep]);
 
   function onEnded() {

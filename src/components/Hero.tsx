@@ -7,12 +7,21 @@ import { useSettings } from '../store/settings';
 import { useLibrary } from '../store/library';
 import { cx } from '../lib/format';
 import { detailPath } from './Cards';
+import { RowBoundary } from './ErrorBoundary';
 import { Img, Rating, toast } from './ui';
 import { IconCheck, IconInfo, IconPlay, IconPlus } from './Icons';
 
 const INTERVAL = 7000;
 
-export function Hero({ items }: { items: MetaPreview[] | null }) {
+export function Hero(props: { items: MetaPreview[] | null }) {
+  return (
+    <RowBoundary>
+      <HeroView {...props} />
+    </RowBoundary>
+  );
+}
+
+function HeroView({ items }: { items: MetaPreview[] | null }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touch = useRef<number | null>(null);

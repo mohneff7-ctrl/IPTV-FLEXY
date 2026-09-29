@@ -5,6 +5,7 @@ import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
 import { Spinner, Toaster } from './components/ui';
 import { Intro, shouldShowIntro } from './components/Intro';
+import { PageBoundary } from './components/ErrorBoundary';
 import { setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -46,19 +47,21 @@ function Layout() {
             </div>
           }
         >
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/browse/:type" element={<Browse />} />
-            <Route path="/catalog/:addonId/:type/:id" element={<Catalog />} />
-            <Route path="/detail/:type/:id" element={<Detail />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/addons" element={<Addons />} />
-            <Route path="/channels" element={<Channels />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/play" element={<Player />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
+          <PageBoundary key={path}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/browse/:type" element={<Browse />} />
+              <Route path="/catalog/:addonId/:type/:id" element={<Catalog />} />
+              <Route path="/detail/:type/:id" element={<Detail />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/addons" element={<Addons />} />
+              <Route path="/channels" element={<Channels />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/play" element={<Player />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </PageBoundary>
         </Suspense>
       </main>
       {showNav && <BottomNav />}

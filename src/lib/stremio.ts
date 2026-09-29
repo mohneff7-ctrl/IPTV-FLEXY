@@ -170,6 +170,138 @@ export function catalogExtras(c: ManifestCatalog) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Addon data hygiene                                                  */
+/* ------------------------------------------------------------------ */
+
+// Addons are written by many people and don't all follow the spec: years and
+// ratings arrive as numbers, countries and genres as strings or arrays, etc.
+// One such value used to crash a card and blank the whole app while scrolling,
+// so every meta is coerced to the shape the UI expects right when it arrives.
+
+type Raw = Record<string, unknown>;
+
+const str = (v: unknown): string | undefined => {
+  if (v == null || v === '') return undefined;
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)) return v.map(str).filter(Boolean).join(', ') || undefined;
+  return undefined;
+};
+
+const strList = (v: unknown): string[] | undefined => {
+  if (v == null) return undefined;
+  const list = Array.isArray(v) ? v : typeof v === 'string' ? v.split(',') : [v];
+  return list.map((x) => (typeof x === 'object' && x ? str((x as Raw).name) : str(x))?.trim()).filter((x): x is string => !!x);
+};
+
+const num = (v: unknown): number | undefined => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const objList = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter((x): x is Raw => !!x && typeof x === 'object') : []);
+
+function normalizeVideo(v: Raw) {
+  return {
+    ...v,
+    id: str(v.id) ?? '',
+    title: str(v.title),
+    name: str(v.name),
+    released: str(v.released),
+    firstAired: str(v.firstAired),
+    thumbnail: str(v.thumbnail),
+    season: num(v.season),
+    episode: num(v.episode),
+    number: num(v.number),
+    overview: str(v.overview),
+    description: str(v.description),
+    rating: str(v.rating),
+    streams: Array.isArray(v.streams) ? v.streams : undefined,
+  };
+}
+
+function normalizeStream(v: unknown): Stream | null {
+  if (!v || typeof v !== 'object') return null;
+  const s = v as Raw;
+  const hints = s.behaviorHints && typeof s.behaviorHints === 'object' ? (s.behaviorHints as Raw) : undefined;
+  const stream: Stream = {
+    ...(s as Stream),
+    url: str(s.url),
+    ytId: str(s.ytId),
+    infoHash: str(s.infoHash),
+    externalUrl: str(s.externalUrl),
+    fileIdx: num(s.fileIdx),
+    name: str(s.name),
+    title: str(s.title),
+    description: str(s.description),
+    sources: strList(s.sources),
+    subtitles: objList(s.subtitles)
+      .map((x) => ({ ...x, id: str(x.id), url: str(x.url) ?? '', lang: str(x.lang) ?? '' }))
+      .filter((x) => x.url),
+    behaviorHints: hints
+      ? {
+          ...hints,
+          bingeGroup: str(hints.bingeGroup),
+          filename: str(hints.filename),
+          videoSize: num(hints.videoSize),
+          notWebReady: !!hints.notWebReady,
+        }
+      : undefined,
+  };
+  return stream.url || stream.infoHash || stream.ytId || stream.externalUrl ? stream : null;
+}
+
+export function normalizeMeta<T extends MetaPreview>(raw: unknown): T | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const m = raw as Raw;
+  const id = str(m.id);
+  const name = str(m.name);
+  if (!id || !name) return null;
+  const links = objList(m.links)
+    .map((l) => ({ ...l, name: str(l.name) ?? '', category: str(l.category) ?? '', url: str(l.url) ?? '' }))
+    .filter((l) => l.name);
+  const extras = m.app_extras && typeof m.app_extras === 'object' ? (m.app_extras as Raw) : undefined;
+  const people = (v: unknown) =>
+    Array.isArray(v)
+      ? objList(v)
+          .map((p) => ({ ...p, name: str(p.name) ?? '', character: str(p.character), photo: str(p.photo) }))
+          .filter((p) => p.name)
+      : undefined;
+  return {
+    ...m,
+    id,
+    name,
+    type: str(m.type) ?? 'movie',
+    poster: str(m.poster),
+    background: str(m.background),
+    logo: str(m.logo),
+    description: str(m.description),
+    releaseInfo: str(m.releaseInfo),
+    year: str(m.year),
+    released: str(m.released),
+    imdbRating: str(m.imdbRating),
+    runtime: str(m.runtime),
+    country: str(m.country),
+    language: str(m.language),
+    status: str(m.status),
+    awards: str(m.awards),
+    website: str(m.website),
+    genres: strList(m.genres),
+    genre: strList(m.genre),
+    cast: strList(m.cast),
+    director: strList(m.director),
+    writer: strList(m.writer),
+    links,
+    trailers: objList(m.trailers).map((t) => ({ ...t, source: str(t.source) ?? '', type: str(t.type) ?? '' })),
+    trailerStreams: objList(m.trailerStreams).map((t) => ({ ...t, ytId: str(t.ytId), title: str(t.title) })),
+    videos: Array.isArray(m.videos) ? objList(m.videos).map(normalizeVideo).filter((v) => v.id) : undefined,
+    app_extras: extras
+      ? { ...extras, cast: people(extras.cast), directors: people(extras.directors), writers: people(extras.writers) }
+      : undefined,
+  } as unknown as T;
+}
+
+/* ------------------------------------------------------------------ */
 /* Resource requests                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -185,16 +317,18 @@ export async function getCatalog(
   else if (ex.required.has('genre')) params.genre = ex.genreOptions[0];
   if (extra.skip) params.skip = extra.skip;
   const url = resourceUrl(addon, 'catalog', catalog.type, catalog.id, params);
-  const data = await fetchJson<{ metas?: MetaPreview[] }>(url);
-  return (data.metas ?? []).filter((m) => m && m.id && m.name);
+  const data = await fetchJson<{ metas?: unknown }>(url);
+  const metas = Array.isArray(data?.metas) ? data.metas : [];
+  return metas.map((m) => normalizeMeta<MetaPreview>(m)).filter((m): m is MetaPreview => !!m);
 }
 
 export async function getMeta(addons: Addon[], type: string, id: string): Promise<{ meta: Meta; addon: Addon } | null> {
   const candidates = addons.filter((a) => supports(a, 'meta', type, id));
   for (const addon of candidates) {
     try {
-      const data = await fetchJson<{ meta?: Meta }>(resourceUrl(addon, 'meta', type, id));
-      if (data.meta && data.meta.id) return { meta: data.meta, addon };
+      const data = await fetchJson<{ meta?: unknown }>(resourceUrl(addon, 'meta', type, id));
+      const meta = normalizeMeta<Meta>(data?.meta);
+      if (meta) return { meta, addon };
     } catch {
       /* try the next addon */
     }
@@ -217,13 +351,12 @@ export function getStreams(
   candidates.forEach((addon) => {
     const url = resourceUrl(addon, 'stream', type, id);
     // One retry: stream addons (often on free hosting) regularly drop a request.
-    fetchJson<{ streams?: Stream[] }>(url, { timeout: 25000 })
-      .catch(() => new Promise((r) => setTimeout(r, 800)).then(() => fetchJson<{ streams?: Stream[] }>(url, { timeout: 25000 })))
+    fetchJson<{ streams?: unknown }>(url, { timeout: 25000 })
+      .catch(() => new Promise((r) => setTimeout(r, 800)).then(() => fetchJson<{ streams?: unknown }>(url, { timeout: 25000 })))
       .then((data) => {
-        (data.streams ?? []).forEach((s) => {
-          if (s && (s.url || s.infoHash || s.ytId || s.externalUrl)) {
-            all.push({ ...s, addonId: addon.manifest.id, addonName: addon.manifest.name });
-          }
+        (Array.isArray(data?.streams) ? data.streams : []).forEach((raw) => {
+          const s = normalizeStream(raw);
+          if (s) all.push({ ...s, addonId: addon.manifest.id, addonName: addon.manifest.name });
         });
       })
       .catch(() => undefined)
@@ -246,8 +379,10 @@ export async function getSubtitles(
   const candidates = addons.filter((a) => supports(a, 'subtitles', type, id));
   const results = await Promise.allSettled(
     candidates.map(async (addon) => {
-      const data = await fetchJson<{ subtitles?: Subtitle[] }>(resourceUrl(addon, 'subtitles', type, id, extra));
-      return (data.subtitles ?? []).map((s) => ({ ...s, addonName: addon.manifest.name }));
+      const data = await fetchJson<{ subtitles?: unknown }>(resourceUrl(addon, 'subtitles', type, id, extra));
+      return objList(data?.subtitles)
+        .map((s): Subtitle & { addonName: string } => ({ ...s, id: str(s.id), url: str(s.url) ?? '', lang: str(s.lang) ?? '', addonName: addon.manifest.name }))
+        .filter((s) => s.url);
     }),
   );
   return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
@@ -305,18 +440,20 @@ export function logoOf(m: Partial<MetaPreview> & { id: string }): string | undef
  * 3x phones; cards get "medium" (500x750) and big posters "large" (780x1170).
  */
 export function posterOf(m: Partial<MetaPreview> & { id: string }, size: 'medium' | 'large' = 'medium'): string | undefined {
-  if (m.poster) return m.poster.replace(/(images\.metahub\.space\/poster\/)(small|medium|large)\//, `$1${size}/`);
+  if (typeof m.poster === 'string' && m.poster) return m.poster.replace(/(images\.metahub\.space\/poster\/)(small|medium|large)\//, `$1${size}/`);
   const tt = imdbId(m.id);
   return tt ? `https://images.metahub.space/poster/${size}/${tt}/img` : undefined;
 }
 
 export function genresOf(m: Partial<MetaPreview>): string[] {
-  return m.genres?.length ? m.genres : m.genre ?? (m.links ?? []).filter((l) => l.category === 'Genres').map((l) => l.name);
+  const list = m.genres?.length ? m.genres : m.genre ?? (m.links ?? []).filter((l) => l.category === 'Genres').map((l) => l.name);
+  return Array.isArray(list) ? list.filter((g) => typeof g === 'string') : [];
 }
 
 /** "2026–" → "2026", "2008–2013" → "2008-2013" (en-dashes reorder badly in RTL). */
 export function yearOf(m: Partial<Meta>): string | undefined {
-  const raw = m.releaseInfo || m.year || (m.released ? String(new Date(m.released).getFullYear()) : undefined);
+  const released = m.released ? new Date(m.released).getFullYear() : NaN;
+  const raw = str(m.releaseInfo) || str(m.year) || (Number.isFinite(released) ? String(released) : undefined);
   return raw?.replace(/[\u2013\u2014]/g, '-').replace(/-\s*$/, '').trim() || undefined;
 }
 

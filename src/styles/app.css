@@ -80,8 +80,14 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
-  background-image: linear-gradient(180deg, var(--bg-2), var(--bg) 60%);
+  /* The crimson glow is painted into the page background (top screen only),
+     not as a fixed full-screen layer: a fixed layer *behind* the scrolling
+     content forces Android WebView to turn the whole page into one GPU
+     texture, which runs out of memory on long pages and goes blank. */
+  background-color: var(--bg);
+  background-image: var(--ambient), linear-gradient(180deg, var(--bg-2), var(--bg) 60%);
+  background-size: 100% 100vh, 100% 100vh, 100% 100%;
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: var(--font);
   font-size: 15px;
@@ -89,16 +95,6 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Ambient crimson glow behind every screen (fixed, so it never repaints on scroll). */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: var(--ambient);
-  pointer-events: none;
 }
 
 body.no-scroll {
@@ -400,9 +396,8 @@ p {
   height: var(--nav-h);
   padding: 0 4px;
   border-radius: 24px;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Solid instead of a live blur: a blurred fixed bar re-samples the page on every scroll frame. */
+  background: rgba(20, 7, 11, 0.95);
   border: 1px solid var(--line-2);
   box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -2798,6 +2793,9 @@ input[type='range']:focus-visible {
 }
 
 .channel-card {
+  /* Big playlists render hundreds of cards: skip the off-screen ones. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 130px;
   position: relative;
   display: flex;
   flex-direction: column;

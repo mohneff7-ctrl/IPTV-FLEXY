@@ -14,16 +14,17 @@ export function PosterCard({ meta, showInfo = true, showType }: { meta: MetaPrev
   const fav = useLibrary((s) => !!s.favorites[meta.id]);
   const lang = useSettings((s) => s.lang);
   const year = yearOf(meta);
-  const country = meta.country?.split(',')[0];
+  const country = typeof meta.country === 'string' ? meta.country.split(',')[0] : undefined;
+  const rating = Number(meta.imdbRating);
   const landscape = meta.posterShape === 'landscape';
   return (
     <Link to={detailPath(meta.type, meta.id)} className={landscape ? 'poster-card landscape' : 'poster-card'}>
       <div className="poster-frame">
         <Img src={posterOf(meta)} alt={meta.name} className="poster-img" fallback={<span className="poster-fallback">{meta.name}</span>} />
         <div className="poster-badges">
-          {meta.imdbRating && (
+          {rating > 0 && (
             <span className="badge badge-rating">
-              {Number(meta.imdbRating).toFixed(1)} <IconStar size={11} />
+              {rating.toFixed(1)} <IconStar size={11} />
             </span>
           )}
           {showType && <span className="badge badge-type">{typeLabel(meta.type, lang)}</span>}

@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(NativePlayerPlugin.class);
         super.onCreate(savedInstanceState);
         WebView webView = getBridge().getWebView();
         // No native scrollbars anywhere: the UI is edge-to-edge like a native app.

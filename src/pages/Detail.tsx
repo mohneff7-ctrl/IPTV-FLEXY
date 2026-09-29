@@ -220,7 +220,7 @@ export default function Detail() {
         <div className="detail-info">
           <DetailTitle meta={meta} />
           <div className="detail-line">
-            {[formatRuntime(meta.runtime), meta.country?.split(',')[0], yearOf(meta)].filter(Boolean).map((x, i) => (
+            {[formatRuntime(meta.runtime), (typeof meta.country === 'string' ? meta.country.split(',')[0] : undefined), yearOf(meta)].filter(Boolean).map((x, i) => (
               <span key={i}>{x}</span>
             ))}
           </div>

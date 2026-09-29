@@ -995,3 +995,40 @@
     -webkit-line-clamp: 2;
   }
 }
+
+/* ============ Hand-off screen shown while the native player opens ============ */
+
+.native-launch {
+  display: grid;
+  place-items: center;
+}
+
+.native-launch-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.18;
+  filter: blur(18px);
+  transform: scale(1.1);
+}
+
+.native-launch-info {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.native-launch-info strong {
+  font-size: 19px;
+}
+
+.native-launch-info span {
+  color: var(--text-2);
+  font-size: 14px;
+}

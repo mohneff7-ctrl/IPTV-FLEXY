@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:keepScreenOn="true">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/player_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="true"
+        app:show_buffering="always"
+        app:resize_mode="fit"
+        app:surface_type="surface_view"
+        app:show_subtitle_button="true"
+        app:show_next_button="false"
+        app:show_previous_button="false"
+        app:show_shuffle_button="false"
+        app:show_timeout="3500"
+        app:keep_content_on_player_reset="true" />
+
+    <TextView
+        android:id="@+id/watermark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="14dp"
+        android:alpha="0.4"
+        android:letterSpacing="0.18"
+        android:shadowColor="#99000000"
+        android:shadowRadius="6"
+        android:text="LAYAN"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/seek_feedback"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/player_pill"
+        android:paddingStart="18dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="8dp"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/player_top_shade"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="28dp">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/player_btn_bg"
+            android:contentDescription="Back"
+            android:src="@drawable/ic_player_back" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAlignment="viewStart"
+                android:textColor="@android:color/white"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAlignment="viewStart"
+                android:textColor="#CCFFFFFF"
+                android:textSize="13sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/quality_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/player_pill"
+            android:paddingStart="10dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="3dp"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btn_quality"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/player_btn_bg"
+            android:contentDescription="Quality"
+            android:src="@drawable/ic_player_hd"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btn_resize"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/player_btn_bg"
+            android:contentDescription="Aspect ratio"
+            android:src="@drawable/ic_player_aspect" />
+    </LinearLayout>
+</FrameLayout>

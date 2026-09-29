@@ -10,7 +10,9 @@ import { Logo, LogoMark } from '../components/Logo';
 import { Toggle, toast } from '../components/ui';
 import { SubtitlePreview, SubtitleStyleControls } from '../components/SubtitleStyle';
 import { APP_ID, APP_NAME, APP_VERSION } from '../lib/brand';
+import { nativePlayerAvailable } from '../lib/nativePlayer';
 import {
+  IconBolt,
   IconCC,
   IconDownload,
   IconGlobe,
@@ -144,6 +146,11 @@ export default function Settings() {
 
       <h3 className="set-section">{t('player')}</h3>
       <div className="set-card">
+        {nativePlayerAvailable() && (
+          <Row icon={<IconBolt size={22} />} title={t('nativePlayer')} desc={t('nativePlayerDesc')}>
+            <Toggle checked={s.nativePlayer} onChange={(v) => set('nativePlayer', v)} label={t('nativePlayer')} />
+          </Row>
+        )}
         <Row icon={<IconNext size={22} />} title={t('autoplayNext')} desc={t('autoplayNextDesc')}>
           <Toggle checked={s.autoplayNext} onChange={(v) => set('autoplayNext', v)} label={t('autoplayNext')} />
         </Row>
