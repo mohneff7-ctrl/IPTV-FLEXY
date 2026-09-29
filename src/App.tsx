@@ -73,6 +73,18 @@ export default function App() {
   const [intro, setIntro] = useState(PLAY_INTRO);
   const endIntro = useCallback(() => setIntro(false), []);
 
+  // Warm the player and the HLS engine while the viewer browses, so pressing
+  // Watch starts the video instantly instead of first downloading code.
+  useEffect(() => {
+    const warm = () => {
+      import('./player/Player');
+      import('hls.js');
+    };
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    if (ric) ric(warm);
+    else setTimeout(warm, 2500);
+  }, []);
+
   useEffect(() => {
     bootstrap();
     setupStatusBar();

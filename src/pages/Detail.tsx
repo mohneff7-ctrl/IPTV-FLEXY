@@ -215,7 +215,7 @@ export default function Detail() {
 
       <div className="detail-head">
         <div className="detail-poster">
-          <Img src={posterOf(meta)} alt={meta.name} />
+          <Img src={posterOf(meta, 'large')} alt={meta.name} />
         </div>
         <div className="detail-info">
           <DetailTitle meta={meta} />

@@ -299,10 +299,15 @@ export function logoOf(m: Partial<MetaPreview> & { id: string }): string | undef
   return tt ? `https://images.metahub.space/logo/medium/${tt}/img` : undefined;
 }
 
-export function posterOf(m: Partial<MetaPreview> & { id: string }): string | undefined {
-  if (m.poster) return m.poster;
+/**
+ * Poster URL at a resolution that stays sharp on high-density screens.
+ * Catalogs usually send metahub "small" posters (300x450), which look soft on
+ * 3x phones; cards get "medium" (500x750) and big posters "large" (780x1170).
+ */
+export function posterOf(m: Partial<MetaPreview> & { id: string }, size: 'medium' | 'large' = 'medium'): string | undefined {
+  if (m.poster) return m.poster.replace(/(images\.metahub\.space\/poster\/)(small|medium|large)\//, `$1${size}/`);
   const tt = imdbId(m.id);
-  return tt ? `https://images.metahub.space/poster/medium/${tt}/img` : undefined;
+  return tt ? `https://images.metahub.space/poster/${size}/${tt}/img` : undefined;
 }
 
 export function genresOf(m: Partial<MetaPreview>): string[] {

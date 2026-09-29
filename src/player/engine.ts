@@ -35,6 +35,17 @@ export interface EngineEvents {
   onTracks: () => void;
 }
 
+export type QualityMode = 'max' | 'auto' | 'saver';
+
+export interface EngineOptions {
+  /** max: highest resolution the connection allows; auto: capped to the screen; saver: ≤480p. */
+  quality: QualityMode;
+  /** Preferred starting height (from the "preferred quality" setting), if any. */
+  preferredHeight?: number;
+}
+
+const DEFAULT_OPTIONS: EngineOptions = { quality: 'max' };
+
 export function guessKind(url: string): EngineKind {
   const path = url.split('?')[0].toLowerCase();
   if (/\.m3u8$|\/hls\/|format=m3u8|\.m3u8/.test(path) || /[?&](type|format)=(hls|m3u8)/i.test(url)) return 'hls';
@@ -70,7 +81,7 @@ function nativeEngine(video: HTMLVideoElement, url: string, ev: EngineEvents): E
   };
 }
 
-async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents): Promise<Engine> {
+async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents, opts: EngineOptions): Promise<Engine> {
   const { default: Hls } = await import('hls.js');
   if (!Hls.isSupported()) {
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -79,15 +90,20 @@ async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents)
     }
     throw new Error('hls-unsupported');
   }
+  const max = opts.quality === 'max';
   const hls = new Hls({
     enableWorker: true,
     lowLatencyMode: false,
     startLevel: -1,
-    capLevelToPlayerSize: true,
-    maxBufferLength: 40,
-    maxMaxBufferLength: 120,
+    // "Best" never caps to the player size: a 3x phone screen deserves the 1080p/4K rendition.
+    capLevelToPlayerSize: !max,
+    // Optimistic first estimate so playback starts in HD, then ABR adapts.
+    abrEwmaDefaultEstimate: max ? 10_000_000 : opts.quality === 'saver' ? 1_200_000 : 4_000_000,
+    abrBandWidthFactor: max ? 0.95 : 0.9,
+    abrBandWidthUpFactor: max ? 0.85 : 0.7,
+    maxBufferLength: max ? 60 : 40,
+    maxMaxBufferLength: 180,
     backBufferLength: 60,
-    abrEwmaDefaultEstimate: 4_000_000,
     startFragPrefetch: true,
     fragLoadingMaxRetry: 6,
     manifestLoadingMaxRetry: 4,
@@ -109,6 +125,16 @@ async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents)
   };
   let mediaRecoveries = 0;
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    const heights = hls.levels.map((l) => l.height || 0);
+    if (opts.quality === 'saver') {
+      const cap = heights.reduce((best, h, i) => (h && h <= 480 && (best < 0 || h > heights[best]) ? i : best), -1);
+      if (cap >= 0) hls.autoLevelCapping = cap;
+    }
+    if (opts.preferredHeight) {
+      // Start on the best rendition at or below the preferred height; ABR stays on.
+      const start = heights.reduce((best, h, i) => (h && h <= opts.preferredHeight! && (best < 0 || h > heights[best]) ? i : best), -1);
+      if (start >= 0) hls.startLevel = start;
+    }
     engine.levels = hls.levels
       .map((l, index) => ({ index, height: l.height, bitrate: l.bitrate }))
       .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate);
@@ -143,6 +169,8 @@ async function mpegtsEngine(video: HTMLVideoElement, url: string, ev: EngineEven
     {
       enableWorker: true,
       lazyLoad: false,
+      // Smaller initial stash = first frame sooner on live IPTV channels.
+      stashInitialSize: 128 * 1024,
       liveBufferLatencyChasing: true,
       liveBufferLatencyMaxLatency: 6,
       liveBufferLatencyMinRemain: 1.5,
@@ -173,8 +201,14 @@ async function mpegtsEngine(video: HTMLVideoElement, url: string, ev: EngineEven
   };
 }
 
-export async function createEngine(kind: EngineKind, video: HTMLVideoElement, url: string, ev: EngineEvents): Promise<Engine> {
-  if (kind === 'hls') return hlsEngine(video, url, ev);
+export async function createEngine(
+  kind: EngineKind,
+  video: HTMLVideoElement,
+  url: string,
+  ev: EngineEvents,
+  opts: EngineOptions = DEFAULT_OPTIONS,
+): Promise<Engine> {
+  if (kind === 'hls') return hlsEngine(video, url, ev, opts);
   if (kind === 'mpegts') return mpegtsEngine(video, url, ev);
   return nativeEngine(video, url, ev);
 }

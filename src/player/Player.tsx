@@ -54,6 +54,17 @@ interface SubOption {
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 const SLEEP_MINUTES = [15, 30, 45, 60, 90, 120];
+const PREFERRED_HEIGHT: Record<string, number | undefined> = { '4K': 2160, '1080p': 1080, '720p': 720, '480p': 480 };
+
+/** Human label for the decoded resolution. Width counts too, so a 1920x800 film is still 1080p. */
+function resolutionLabel(w: number, h: number): string | null {
+  if (!w || !h) return null;
+  if (w >= 3200 || h >= 2000) return '4K';
+  if (w >= 1800 || h >= 1000) return '1080p';
+  if (w >= 1200 || h >= 700) return '720p';
+  if (w >= 800 || h >= 470) return '480p';
+  return `${h}p`;
+}
 /** Hands a running sleep timer to the next episode's player (it remounts per video). */
 let carriedSleep: Sleep = null;
 function carriedSleepTimer(): Sleep {
@@ -149,6 +160,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   const [sleepLeft, setSleepLeft] = useState(0);
   const [sleepDone, setSleepDone] = useState(false);
   const [brightness, setBrightness] = useState(1);
+  const [res, setRes] = useState<string | null>(null);
   const audioDelay = useAudioDelay(videoRef);
 
   const { stream, meta, video } = session;
@@ -186,10 +198,17 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       }
       const kind = order[attempt++];
       try {
-        const engine = await createEngine(kind, el, url, {
-          onFatal: (r) => !cancelled && engineRef.current === engine && tryNext(r),
-          onTracks: () => setTracksVersion((v) => v + 1),
-        });
+        const { streamQuality, preferredQuality } = useSettings.getState();
+        const engine = await createEngine(
+          kind,
+          el,
+          url,
+          {
+            onFatal: (r) => !cancelled && engineRef.current === engine && tryNext(r),
+            onTracks: () => setTracksVersion((v) => v + 1),
+          },
+          { quality: streamQuality, preferredHeight: PREFERRED_HEIGHT[preferredQuality] },
+        );
         if (cancelled) return engine.destroy();
         engineRef.current = engine;
         el.play().catch(() => undefined);
@@ -283,6 +302,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       ['playing', () => (setWaiting(false), setError(null))],
       ['canplay', () => setWaiting(false)],
       ['volumechange', () => (setVolume(el.volume), setMuted(el.muted))],
+      ['resize', () => setRes(resolutionLabel(el.videoWidth, el.videoHeight))],
       ['ratechange', () => setRate(el.playbackRate)],
       ['ended', () => onEnded()],
     ];
@@ -722,6 +742,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
               <strong>{session.title}</strong>
               {session.subtitle && <span>{session.subtitle}</span>}
             </div>
+            {res && <span className={cx('p-res', (res === '4K' || res === '1080p') && 'hd')}>{res}</span>}
             {sleep && (
               <button className="p-sleep-chip" onClick={() => setMenu(menu === 'sleep' ? null : 'sleep')} aria-label={t('sleepTimer')}>
                 <IconMoon size={16} />

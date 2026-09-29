@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { QualityMode } from '../player/engine';
 
 export type Lang = 'ar' | 'en';
 export type FitMode = 'contain' | 'cover' | 'fill';
@@ -22,6 +23,7 @@ export interface Settings {
   swipeGestures: boolean;
   showIntro: boolean;
   preferredQuality: 'auto' | '4K' | '1080p' | '720p' | '480p';
+  streamQuality: QualityMode;
   fitMode: FitMode;
   seekStep: number;
   showAdult: boolean;
@@ -52,6 +54,7 @@ export const useSettings = create<Settings>()(
       swipeGestures: true,
       showIntro: true,
       preferredQuality: 'auto',
+      streamQuality: 'max',
       fitMode: 'contain',
       seekStep: 10,
       showAdult: false,

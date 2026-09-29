@@ -61,7 +61,7 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
             <div className="hero-shade" />
             <div className="hero-content">
               <Link to={detailPath(m.type, m.id)} className="hero-poster" tabIndex={active ? 0 : -1}>
-                <Img src={posterOf(m)} alt={m.name} />
+                <Img src={posterOf(m, 'large')} alt={m.name} />
               </Link>
               <div className="hero-text">
                 <HeroTitle meta={m} />

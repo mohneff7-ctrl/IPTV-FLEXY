@@ -163,6 +163,21 @@ export default function Settings() {
             ))}
           </select>
         </Row>
+        <Row icon={<IconStar size={20} />} title={t('streamQuality')} desc={t('streamQualityDesc')}>
+          <div className="segmented">
+            {(
+              [
+                ['max', 'qBest'],
+                ['auto', 'qBalanced'],
+                ['saver', 'qSaver'],
+              ] as const
+            ).map(([v, k]) => (
+              <button key={v} className={s.streamQuality === v ? 'on' : ''} onClick={() => set('streamQuality', v)}>
+                {t(k)}
+              </button>
+            ))}
+          </div>
+        </Row>
         <Row icon={<IconSpeed size={22} />} title={t('seekStep')}>
           <select value={s.seekStep} onChange={(e) => set('seekStep', Number(e.target.value))}>
             {[5, 10, 15, 30].map((n) => (
