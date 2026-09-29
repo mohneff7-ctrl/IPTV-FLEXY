@@ -94,7 +94,20 @@ export function Rating({ value }: { value?: string }) {
   );
 }
 
-export function Img({ src, alt, className, fallback }: { src?: string; alt: string; className?: string; fallback?: ReactNode }) {
+export function Img({
+  src,
+  alt,
+  className,
+  fallback,
+  eager,
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  fallback?: ReactNode;
+  /** Above-the-fold image: load immediately with high priority. */
+  eager?: boolean;
+}) {
   const [failed, setFailed] = useState(!src);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
@@ -107,7 +120,8 @@ export function Img({ src, alt, className, fallback }: { src?: string; alt: stri
       src={src}
       alt={alt}
       className={cx(className, 'fade-img', loaded && 'loaded')}
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchPriority={eager ? 'high' : 'auto'}
       decoding="async"
       referrerPolicy="no-referrer"
       onLoad={() => setLoaded(true)}

@@ -54,14 +54,18 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
     >
       {list.map((m, i) => {
         const active = i === index;
+        // Only the current slide and its neighbours carry images: 10 full-HD backdrops
+        // at launch were ~5 MB of downloads and decodes competing with the first paint.
+        const n = list.length;
+        const near = active || i === (index + 1) % n || i === (index - 1 + n) % n;
         const genres = genresOf(m).slice(0, 2);
         return (
           <div key={m.id} className={cx('hero-slide', active && 'active')} aria-hidden={!active}>
-            <Img src={backgroundOf(m)} alt="" className="hero-bg" />
+            {near && <Img src={backgroundOf(m)} alt="" className="hero-bg" eager={active} />}
             <div className="hero-shade" />
             <div className="hero-content">
               <Link to={detailPath(m.type, m.id)} className="hero-poster" tabIndex={active ? 0 : -1}>
-                <Img src={posterOf(m, 'large')} alt={m.name} />
+                {near && <Img src={posterOf(m, 'large')} alt={m.name} />}
               </Link>
               <div className="hero-text">
                 <HeroTitle meta={m} />

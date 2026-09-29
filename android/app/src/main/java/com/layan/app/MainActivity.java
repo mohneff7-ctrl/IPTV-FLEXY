@@ -1,7 +1,6 @@
 package com.layan.app;
 
 import android.os.Bundle;
-import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
@@ -16,8 +15,6 @@ public class MainActivity extends BridgeActivity {
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
         webView.setScrollbarFadingEnabled(true);
-        // GPU compositing for smooth scrolling and video.
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         WebSettings settings = webView.getSettings();
         // Start playback (and auto-play the next episode) without an extra tap.
         settings.setMediaPlaybackRequiresUserGesture(false);
