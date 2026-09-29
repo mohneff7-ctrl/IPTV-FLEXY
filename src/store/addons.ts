@@ -73,6 +73,6 @@ export const useAddons = create<AddonsState>()(
         });
       },
     }),
-    { name: 'flexy.addons', version: 1, partialize: (s) => ({ addons: s.addons }) },
+    { name: 'layan.addons', version: 1, partialize: (s) => ({ addons: s.addons }) },
   ),
 );

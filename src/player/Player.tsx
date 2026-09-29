@@ -14,6 +14,11 @@ import { createEngine, engineOrder, type Engine } from './engine';
 import { SeekBar } from './SeekBar';
 import { enterPlayerMode, exitPlayerMode } from '../lib/native';
 import { Spinner, toast } from '../components/ui';
+import { SubtitleStyleControls } from '../components/SubtitleStyle';
+import { subtitleVars } from '../lib/subtitleStyle';
+import { APP_NAME } from '../lib/brand';
+import { useAudioDelay } from './audioDelay';
+import { useSwipeGestures } from './gestures';
 import {
   IconAspect,
   IconBack,
@@ -24,6 +29,7 @@ import {
   IconFullscreenExit,
   IconLayers,
   IconLock,
+  IconMoon,
   IconMute,
   IconNext,
   IconPause,
@@ -31,10 +37,14 @@ import {
   IconPlay,
   IconReplay,
   IconSpeed,
+  IconSun,
   IconVolume,
+  IconWave,
 } from '../components/Icons';
 
-type Menu = null | 'subs' | 'quality' | 'speed' | 'audio' | 'fit';
+type Menu = null | 'subs' | 'subStyle' | 'quality' | 'speed' | 'audio' | 'fit' | 'sleep' | 'sync';
+/** A clock deadline, or "stop when this video ends". */
+type Sleep = null | { at: number } | { end: true };
 interface SubOption {
   id: string;
   url: string;
@@ -43,6 +53,13 @@ interface SubOption {
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const SLEEP_MINUTES = [15, 30, 45, 60, 90, 120];
+/** Hands a running sleep timer to the next episode's player (it remounts per video). */
+let carriedSleep: Sleep = null;
+function carriedSleepTimer(): Sleep {
+  const s = carriedSleep;
+  return s && 'at' in s && s.at > Date.now() ? s : null;
+}
 const FITS: FitMode[] = ['contain', 'cover', 'fill'];
 const HIDE_AFTER = 3200;
 
@@ -125,6 +142,14 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   const [ripple, setRipple] = useState<{ side: 'l' | 'r'; n: number } | null>(null);
   const [nextLoading, setNextLoading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [sleep, setSleep] = useState<Sleep>(carriedSleepTimer);
+  useEffect(() => {
+    carriedSleep = null; // consumed (cleared in an effect so StrictMode's double init still sees it)
+  }, []);
+  const [sleepLeft, setSleepLeft] = useState(0);
+  const [sleepDone, setSleepDone] = useState(false);
+  const [brightness, setBrightness] = useState(1);
+  const audioDelay = useAudioDelay(videoRef);
 
   const { stream, meta, video } = session;
   const url = useMemo(() => playableUrl(stream), [stream]);
@@ -318,11 +343,15 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
 
   /* ---------------- controls visibility ---------------- */
 
+  // Never hide the controls while a menu is open (the viewer is adjusting something).
+  const menuOpen = useRef(false);
+  menuOpen.current = menu != null;
+
   const poke = useCallback(() => {
     setVisible(true);
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
-      if (!videoRef.current?.paused) {
+      if (!videoRef.current?.paused && !menuOpen.current) {
         setVisible(false);
         setMenu(null);
       }
@@ -332,7 +361,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   useEffect(() => {
     poke();
     return () => clearTimeout(hideTimer.current);
-  }, [poke, playing]);
+  }, [poke, playing, menu]);
 
   /* ---------------- actions ---------------- */
 
@@ -438,6 +467,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       nav(`/detail/${encodeURIComponent(meta.type)}/${encodeURIComponent(meta.id)}?play=${encodeURIComponent(next.id)}`, { replace: true });
       return;
     }
+    carriedSleep = sleep;
     startSession({
       ...session,
       stream: found,
@@ -445,12 +475,51 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       videoId: next.id,
       subtitle: `${t('season')} ${next.season} · ${t('episode')} ${next.episode ?? next.number}${next.title || next.name ? ' — ' + (next.title || next.name) : ''}`,
     });
-  }, [next, meta, nextLoading, persist, stream, addons, startSession, session, t, nav]);
+  }, [next, meta, nextLoading, persist, stream, addons, startSession, session, t, nav, sleep]);
 
   function onEnded() {
     persist();
+    if (sleep && 'end' in sleep) return fireSleep();
     if (next && settings.autoplayNext) setCountdown(5);
   }
+
+  /* ---------------- sleep timer ---------------- */
+
+  function fireSleep() {
+    videoRef.current?.pause();
+    setSleep(null);
+    setCountdown(null);
+    setMenu(null);
+    setSleepDone(true);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+  }
+
+  const chooseSleep = (minutes: number | 'end' | null) => {
+    setMenu(null);
+    if (minutes == null) {
+      setSleep(null);
+      toast(t('sleepOff'));
+    } else if (minutes === 'end') {
+      setSleep({ end: true });
+      toast(t('sleepSetEnd'));
+    } else {
+      setSleep({ at: Date.now() + minutes * 60_000 });
+      setSleepLeft(minutes * 60);
+      toast(t('sleepSet', { t: t('minutesN', { n: minutes }) }));
+    }
+  };
+
+  useEffect(() => {
+    if (!sleep || !('at' in sleep)) return;
+    const tick = () => {
+      const left = Math.max(0, Math.round((sleep.at - Date.now()) / 1000));
+      setSleepLeft(left);
+      if (left <= 0) fireSleep();
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [sleep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (countdown == null) return;
@@ -514,7 +583,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: session.subtitle ? `${session.title} — ${session.subtitle}` : session.title,
-      artist: 'FLEXY',
+      artist: APP_NAME,
       artwork: session.poster ? [{ src: session.poster, sizes: '300x450' }] : [],
     });
     const ms = navigator.mediaSession;
@@ -542,7 +611,16 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
 
   /* ---------------- gestures ---------------- */
 
+  const swipe = useSwipeGestures({
+    enabled: settings.swipeGestures && !locked && !menu,
+    getVolume: () => (muted ? 0 : volume),
+    setVolume: setVol,
+    getBrightness: () => brightness,
+    setBrightness,
+  });
+
   const onSurfaceClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (swipe.consumeClick()) return;
     if (locked) return poke();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
@@ -584,11 +662,30 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       className={cx('player', !visible && 'hide-ui', locked && 'locked')}
       dir="ltr"
       onMouseMove={poke}
-      style={{ '--sub-scale': settings.subtitleSize / 100 } as React.CSSProperties}
+      style={subtitleVars(settings)}
     >
-      <video ref={videoRef} className={`fit-${fit}`} playsInline autoPlay preload="auto" poster={meta?.background} />
+      <video
+        ref={videoRef}
+        className={`fit-${fit}`}
+        playsInline
+        autoPlay
+        preload="auto"
+        poster={meta?.background}
+        style={brightness > 1 ? { filter: `brightness(${brightness})` } : undefined}
+      />
+      {brightness < 1 && <div className="p-dim" style={{ opacity: 1 - brightness }} />}
 
-      <div className="p-surface" onClick={onSurfaceClick} />
+      <div className="p-surface" onClick={onSurfaceClick} {...swipe.handlers} />
+
+      {swipe.hud && (
+        <div className={cx('p-hud', swipe.hud.kind === 'brightness' ? 'left' : 'right')}>
+          {swipe.hud.kind === 'brightness' ? <IconSun size={22} /> : swipe.hud.value === 0 ? <IconMute size={22} /> : <IconVolume size={22} />}
+          <div className="p-hud-bar">
+            <span style={{ height: `${Math.min(100, (swipe.hud.value / swipe.hud.max) * 100)}%` }} />
+          </div>
+          <b>{Math.round(swipe.hud.value * 100)}%</b>
+        </div>
+      )}
 
       {ripple && (
         <div className={cx('p-ripple', ripple.side === 'l' ? 'left' : 'right')}>
@@ -598,7 +695,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       )}
 
       {shownCues.length > 0 && (
-        <div className={cx('p-subs', settings.subtitleBackground && 'boxed', visible && 'raised')} dir="auto">
+        <div className={cx('p-subs', visible && 'raised')} dir="auto">
           {shownCues.map((c, i) => (
             <span key={i} dangerouslySetInnerHTML={{ __html: c.text.replace(/\n/g, '<br/>') }} />
           ))}
@@ -625,6 +722,15 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
               <strong>{session.title}</strong>
               {session.subtitle && <span>{session.subtitle}</span>}
             </div>
+            {sleep && (
+              <button className="p-sleep-chip" onClick={() => setMenu(menu === 'sleep' ? null : 'sleep')} aria-label={t('sleepTimer')}>
+                <IconMoon size={16} />
+                <span dir="ltr">{'at' in sleep ? formatTime(sleepLeft) : live ? t('live') : t('sleepEndOfVideo')}</span>
+              </button>
+            )}
+            <button className={cx('p-btn', sleep && 'on')} onClick={() => setMenu(menu === 'sleep' ? null : 'sleep')} aria-label={t('sleepTimer')} title={t('sleepTimer')}>
+              <IconMoon size={22} />
+            </button>
             <button className="p-btn" onClick={() => setLocked(true)} aria-label="lock">
               <IconLock size={22} />
             </button>
@@ -695,6 +801,9 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
                   <IconLayers size={24} />
                 </button>
               )}
+              <button className={cx('p-btn', (subDelay !== 0 || audioDelay.ms !== 0) && 'on')} onClick={() => setMenu(menu === 'sync' ? null : 'sync')} aria-label={t('sync')} title={t('sync')}>
+                <IconWave size={24} />
+              </button>
               <button className="p-btn" onClick={() => setMenu(menu === 'speed' ? null : 'speed')} aria-label={t('speed')}>
                 <IconSpeed size={24} />
               </button>
@@ -715,10 +824,15 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       )}
 
       {menu && (
-        <div className="p-menu" dir={settings.lang === 'ar' ? 'rtl' : 'ltr'} onClick={(e) => e.stopPropagation()}>
+        <div key={menu} className="p-menu" dir={settings.lang === 'ar' ? 'rtl' : 'ltr'} onClick={(e) => e.stopPropagation()}>
           {menu === 'subs' && (
             <>
-              <h4>{t('subtitles')}</h4>
+              <div className="p-menu-head">
+                <h4>{t('subtitles')}</h4>
+                <button className="p-chip-btn" onClick={() => setMenu('subStyle')}>
+                  {t('style')}
+                </button>
+              </div>
               <div className="p-delay">
                 <span>{t('subtitleDelay')}</span>
                 <button onClick={() => setSubDelay((d) => +(d - 0.25).toFixed(2))}>−</button>
@@ -733,6 +847,86 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
                   {s.label}
                 </button>
               ))}
+            </>
+          )}
+          {menu === 'subStyle' && (
+            <>
+              <div className="p-menu-head">
+                <button className="p-chip-btn" onClick={() => setMenu('subs')} aria-label={t('back')}>
+                  ‹ {t('subtitles')}
+                </button>
+                <h4>{t('subtitleStyle')}</h4>
+              </div>
+              <SubtitleStyleControls compact />
+            </>
+          )}
+          {menu === 'sleep' && (
+            <>
+              <h4>{t('sleepTimer')}</h4>
+              {sleep && 'at' in sleep && (
+                <p className="p-menu-note">
+                  {t('sleepSet', { t: formatTime(sleepLeft) })}
+                </p>
+              )}
+              <button className={cx('p-opt', !sleep && 'on')} onClick={() => chooseSleep(null)}>
+                {t('off')}
+              </button>
+              {!live && (
+                <button className={cx('p-opt', sleep && 'end' in sleep && 'on')} onClick={() => chooseSleep('end')}>
+                  {session.video ? t('sleepEndOfEpisode') : t('sleepEndOfVideo')}
+                </button>
+              )}
+              {SLEEP_MINUTES.map((m) => (
+                <button key={m} className="p-opt" onClick={() => chooseSleep(m)}>
+                  {t('minutesN', { n: m })}
+                </button>
+              ))}
+            </>
+          )}
+          {menu === 'sync' && (
+            <>
+              <h4>{t('sync')}</h4>
+              <div className="p-sync">
+                <div className="p-sync-head">
+                  <IconWave size={18} />
+                  <span>{t('audioDelay')}</span>
+                  {audioDelay.ms !== 0 && (
+                    <button className="p-chip-btn" onClick={() => audioDelay.set(0)}>
+                      {t('reset')}
+                    </button>
+                  )}
+                </div>
+                {audioDelay.unavailable ? (
+                  <p className="p-menu-note">{t('audioDelayUnavailable')}</p>
+                ) : (
+                  <>
+                    <div className="p-delay">
+                      <button onClick={() => audioDelay.set(audioDelay.ms - 50)} disabled={audioDelay.ms <= 0}>
+                        −
+                      </button>
+                      <b dir="ltr">{audioDelay.ms > 0 ? '+' : ''}{audioDelay.ms} ms</b>
+                      <button onClick={() => audioDelay.set(audioDelay.ms + 50)}>+</button>
+                    </div>
+                    <p className="p-menu-note">{t('audioDelayHint')}</p>
+                  </>
+                )}
+              </div>
+              <div className="p-sync">
+                <div className="p-sync-head">
+                  <IconCC size={18} />
+                  <span>{t('subtitleDelay')}</span>
+                  {subDelay !== 0 && (
+                    <button className="p-chip-btn" onClick={() => setSubDelay(0)}>
+                      {t('reset')}
+                    </button>
+                  )}
+                </div>
+                <div className="p-delay">
+                  <button onClick={() => setSubDelay((d) => +(d - 0.25).toFixed(2))}>−</button>
+                  <b dir="ltr">{subDelay > 0 ? '+' : ''}{subDelay.toFixed(2)}s</b>
+                  <button onClick={() => setSubDelay((d) => +(d + 0.25).toFixed(2))}>+</button>
+                </div>
+              </div>
             </>
           )}
           {menu === 'quality' && (
@@ -805,6 +999,28 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
             </button>
             <button className="btn btn-outline" onClick={() => setCountdown(null)}>
               {t('cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {sleepDone && (
+        <div className="p-sleep-done" dir={settings.lang === 'ar' ? 'rtl' : 'ltr'}>
+          <IconMoon size={46} />
+          <h3>{t('sleepEnded')}</h3>
+          <p>{t('sleepEndedHint')}</p>
+          <div className="p-error-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setSleepDone(false);
+                videoRef.current?.play().catch(() => undefined);
+              }}
+            >
+              <IconPlay size={18} /> {t('keepWatching')}
+            </button>
+            <button className="btn btn-outline" onClick={exit}>
+              {t('back')}
             </button>
           </div>
         </div>

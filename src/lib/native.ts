@@ -1,5 +1,5 @@
 /**
- * Thin bridge to native features when FLEXY runs as an Android/iOS app
+ * Thin bridge to native features when LAYAN runs as an Android/iOS app
  * (Capacitor). Every function is a safe no-op in the browser.
  */
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
@@ -56,7 +56,7 @@ export async function setupStatusBar() {
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
     await StatusBar.setStyle({ style: Style.Dark });
-    await StatusBar.setBackgroundColor({ color: '#08080b' }).catch(() => undefined);
+    await StatusBar.setBackgroundColor({ color: '#0a0406' }).catch(() => undefined);
   } catch {
     /* ignore */
   }

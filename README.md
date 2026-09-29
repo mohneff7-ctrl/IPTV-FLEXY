@@ -1,8 +1,8 @@
-# FLEXY
+# LAYAN
 
-**FLEXY** is a fast, cinematic media center for movies, series, anime and live TV. It is compatible with **every Stremio addon**. You can install any addon by its URL and FLEXY uses it for catalogs, metadata, streams and subtitles, as Stremio does. It also plays **IPTV M3U playlists**.
+**LAYAN** is a fast, cinematic media center for movies, series, anime and live TV. It is compatible with **every Stremio addon**. You can install any addon by its URL and LAYAN uses it for catalogs, metadata, streams and subtitles, as Stremio does. It also plays **IPTV M3U playlists**.
 
-> **فلكسي** تطبيق لمشاهدة الأفلام والمسلسلات والأنمي والقنوات المباشرة، متوافق مع **جميع إضافات Stremio**. الصق رابط أي إضافة وسيعمل مباشرة: القوائم، البيانات، روابط المشاهدة والترجمات، بالإضافة إلى قوائم IPTV ‏(M3U).
+> **ليان** تطبيق لمشاهدة الأفلام والمسلسلات والأنمي والقنوات المباشرة، متوافق مع **جميع إضافات Stremio**. الصق رابط أي إضافة وسيعمل مباشرة: القوائم، البيانات، روابط المشاهدة والترجمات، بالإضافة إلى قوائم IPTV ‏(M3U).
 
 ---
 
@@ -13,7 +13,11 @@
 | 🧩 **Stremio addons** | Install any addon by URL (`https://…/manifest.json` or `stremio://…`). Supports catalogs (with genre, search and paging), meta, streams, subtitles and addon catalogs. Honours `types` / `idPrefixes`. You can reorder addons, open their configure page, remove them, and browse the official and community addon lists. |
 | 🎬 **Player** | hls.js (HLS/m3u8), mpegts.js (IPTV `.ts` / FLV live) and the native `<video>` element, with **automatic fallback** between engines. The engines load only when needed. Quality and audio-track selection, speed, fit/zoom/stretch, picture-in-picture, fullscreen with landscape lock, and a screen lock. |
 | ⚡ **Player UX** | Resume where you left off, double-tap to seek, keyboard shortcuts, lock-screen media controls, keep-screen-awake, **auto next episode** (picks the same `bingeGroup` stream, as Stremio does), and a "next episode" countdown. |
-| 💬 **Subtitles** | From every subtitle addon plus the ones embedded in streams. SRT/VTT, Arabic CP-1256 auto-detection, a sync (delay) control, size and background settings, and auto-select of your preferred language. |
+| 🌙 **Sleep timer** | Stop playback after 15–120 minutes or at the end of the current episode, with a countdown chip in the player. |
+| 🔊 **Audio sync** | Delay the sound by 0–5 s when it runs ahead of the picture (Web Audio; works with HLS and IPTV streams). |
+| 👆 **Swipe gestures** | On touch screens, swipe up or down on the left for brightness and on the right for volume. You can turn this off in Settings. |
+| 💬 **Subtitles** | From every subtitle addon plus the ones embedded in streams. SRT/VTT, Arabic CP-1256 auto-detection, a sync (delay) control, and auto-select of your preferred language. |
+| 🎨 **Subtitle style** | Font (Cairo, Tajawal, Noto Naskh, Lalezar, System, Serif, Mono), bold, size, text color, edge (shadow / outline), and background color and opacity, with a live preview. The style is also available from the player's subtitle menu. |
 | 📺 **Live TV** | Add M3U playlists; channels are grouped with search. Addon `tv` catalogs are listed too. |
 | ❤️ **Library** | Favorites, continue watching, per-episode watched marks, and backup export/import. |
 | 🌍 **Arabic RTL + English** | Full right-to-left layout, switchable in Settings. |
@@ -29,7 +33,7 @@ npm run build      # production build in dist/
 
 ## 📱 Android APK
 
-Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-debug-apk` from the run's artifacts and install it on your phone or Android TV.
+Every push runs **GitHub Actions → "Build Android APK"**. Download `LAYAN-debug-apk` from the run's artifacts and install it on your phone or Android TV.
 
 Local build (requires Android Studio / Android SDK + JDK 21):
 
@@ -63,9 +67,9 @@ src/
   pages/             Home, Browse, Catalog, Detail, Search, Favorites, Channels, Addons, Settings
   components/        Shell (top bar, bottom nav, drawer), Hero, cards, rows, stream sheet
   store/             zustand stores (addons, library, settings, playlists, playback)
-android/             Capacitor Android project (app id com.flexy.app)
+android/             Capacitor Android project (app id com.layan.app)
 ```
 
 ## ⚖️ Note
 
-FLEXY does not host or provide any content. Everything comes from the addons and playlists you install yourself. Only use sources you have the right to access.
+LAYAN does not host or provide any content. Everything comes from the addons and playlists you install yourself. Only use sources you have the right to access.

@@ -1,6 +1,6 @@
 {
-  "appId": "com.flexy.app",
-  "appName": "FLEXY",
+  "appId": "com.layan.app",
+  "appName": "LAYAN",
   "webDir": "dist",
   "server": {
     "androidScheme": "http",
@@ -8,7 +8,7 @@
   },
   "android": {
     "allowMixedContent": true,
-    "backgroundColor": "#08080b"
+    "backgroundColor": "#0a0406"
   },
   "plugins": {
     "CapacitorHttp": {

@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 
 export type Lang = 'ar' | 'en';
 export type FitMode = 'contain' | 'cover' | 'fill';
+export type SubtitleFont = 'cairo' | 'tajawal' | 'naskh' | 'lalezar' | 'system' | 'serif' | 'mono';
+export type SubtitleEdge = 'shadow' | 'outline' | 'none';
 
 export interface Settings {
   lang: Lang;
@@ -10,7 +12,15 @@ export interface Settings {
   resumePlayback: boolean;
   subtitleLang: string;
   subtitleSize: number;
-  subtitleBackground: boolean;
+  subtitleFont: SubtitleFont;
+  subtitleBold: boolean;
+  subtitleColor: string;
+  subtitleBgColor: string;
+  /** 0 = no box behind the text. */
+  subtitleBgOpacity: number;
+  subtitleEdge: SubtitleEdge;
+  swipeGestures: boolean;
+  showIntro: boolean;
   preferredQuality: 'auto' | '4K' | '1080p' | '720p' | '480p';
   fitMode: FitMode;
   seekStep: number;
@@ -21,6 +31,16 @@ export interface Settings {
   set: (patch: Partial<Omit<Settings, 'set'>>) => void;
 }
 
+export const SUBTITLE_DEFAULTS = {
+  subtitleSize: 100,
+  subtitleFont: 'cairo' as SubtitleFont,
+  subtitleBold: true,
+  subtitleColor: '#ffffff',
+  subtitleBgColor: '#000000',
+  subtitleBgOpacity: 60,
+  subtitleEdge: 'shadow' as SubtitleEdge,
+};
+
 export const useSettings = create<Settings>()(
   persist(
     (set) => ({
@@ -28,8 +48,9 @@ export const useSettings = create<Settings>()(
       autoplayNext: true,
       resumePlayback: true,
       subtitleLang: 'ara',
-      subtitleSize: 100,
-      subtitleBackground: true,
+      ...SUBTITLE_DEFAULTS,
+      swipeGestures: true,
+      showIntro: true,
       preferredQuality: 'auto',
       fitMode: 'contain',
       seekStep: 10,
@@ -39,6 +60,16 @@ export const useSettings = create<Settings>()(
       profileName: '',
       set: (patch) => set(patch),
     }),
-    { name: 'flexy.settings', version: 1 },
+    {
+      name: 'layan.settings',
+      version: 2,
+      migrate: (persisted, version) => {
+        const s = (persisted ?? {}) as Record<string, unknown>;
+        // v1 had a simple on/off subtitle box.
+        if (version < 2 && s.subtitleBackground === false) s.subtitleBgOpacity = 0;
+        delete s.subtitleBackground;
+        return s as unknown as Settings;
+      },
+    },
   ),
 );

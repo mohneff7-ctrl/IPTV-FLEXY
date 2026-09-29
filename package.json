@@ -1,8 +1,8 @@
 {
-  "name": "flexy",
+  "name": "layan",
   "private": true,
   "version": "1.0.0",
-  "description": "FLEXY \u2014 a fast, beautiful media center compatible with every Stremio addon.",
+  "description": "LAYAN — a fast, beautiful media center compatible with every Stremio addon.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,7 +20,9 @@
     "@capacitor/screen-orientation": "^8.0.1",
     "@capacitor/status-bar": "^8.0.3",
     "@fontsource-variable/cairo": "^5.3.0",
+    "@fontsource-variable/noto-naskh-arabic": "^5.3.0",
     "@fontsource/lalezar": "^5.3.0",
+    "@fontsource/tajawal": "^5.3.0",
     "hls.js": "^1.7.3",
     "mpegts.js": "^1.8.2",
     "react": "^19.3.0",

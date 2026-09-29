@@ -26,6 +26,6 @@ export const usePlayback = create<PlaybackState>()(
       session: null,
       start: (session) => set({ session }),
     }),
-    { name: 'flexy.playback', storage: createJSONStorage(() => sessionStorage) },
+    { name: 'layan.playback', storage: createJSONStorage(() => sessionStorage) },
   ),
 );

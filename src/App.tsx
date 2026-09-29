@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useSettings } from './store/settings';
 import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
 import { Spinner, Toaster } from './components/ui';
+import { Intro, shouldShowIntro } from './components/Intro';
 import { setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -17,6 +18,9 @@ const Addons = lazy(() => import('./pages/Addons'));
 const Channels = lazy(() => import('./pages/Channels'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Player = lazy(() => import('./player/Player'));
+
+// Decided once per launch (outside React so StrictMode's double render can't consume it).
+const PLAY_INTRO = shouldShowIntro(useSettings.getState().showIntro);
 
 function Layout() {
   const loc = useLocation();
@@ -66,6 +70,8 @@ function Layout() {
 export default function App() {
   const lang = useSettings((s) => s.lang);
   const bootstrap = useAddons((s) => s.bootstrap);
+  const [intro, setIntro] = useState(PLAY_INTRO);
+  const endIntro = useCallback(() => setIntro(false), []);
 
   useEffect(() => {
     bootstrap();
@@ -85,6 +91,7 @@ export default function App() {
   return (
     <HashRouter>
       <Layout />
+      {intro && <Intro onDone={endIntro} />}
     </HashRouter>
   );
 }

@@ -1,13 +1,13 @@
 {
-  "name": "FLEXY",
-  "short_name": "FLEXY",
+  "name": "LAYAN",
+  "short_name": "LAYAN",
   "description": "Movies, series, anime and live TV \u2014 works with every Stremio addon.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#08080b",
-  "theme_color": "#08080b",
+  "background_color": "#0a0406",
+  "theme_color": "#0a0406",
   "lang": "ar",
   "dir": "rtl",
   "icons": [

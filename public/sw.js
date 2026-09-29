@@ -1,6 +1,6 @@
-// FLEXY service worker: caches the app shell only. Addon responses, images
+// LAYAN service worker: caches the app shell only. Addon responses, images
 // and video streams always go to the network (they change constantly).
-const CACHE = 'flexy-shell-v1';
+const CACHE = 'layan-shell-v1';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './icon.svg', './manifest.webmanifest'])));

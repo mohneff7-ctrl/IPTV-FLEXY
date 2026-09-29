@@ -1,4 +1,4 @@
-package com.flexy.app;
+package com.layan.app;
 
 import com.getcapacitor.BridgeActivity;
 

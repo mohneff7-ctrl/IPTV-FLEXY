@@ -82,7 +82,7 @@ export const useLibrary = create<LibraryState>()(
       addSearch: (q) => set((s) => ({ searches: [q, ...s.searches.filter((x) => x !== q)].slice(0, 12) })),
       clearSearches: () => set({ searches: [] }),
     }),
-    { name: 'flexy.library', version: 1 },
+    { name: 'layan.library', version: 1 },
   ),
 );
 

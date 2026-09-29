@@ -42,7 +42,7 @@ export function BottomNav() {
   );
 }
 
-export async function shareApp(title = 'FLEXY', url = location.href.split('#')[0]) {
+export async function shareApp(title = 'LAYAN', url = location.href.split('#')[0]) {
   try {
     if (navigator.share) await navigator.share({ title, url });
     else {

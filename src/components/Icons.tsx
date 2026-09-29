@@ -184,3 +184,23 @@ export const IconLive = make(
 export const IconLock = make(
   <path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4m3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0z" />,
 );
+export const IconMoon = stroke(<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11" />);
+export const IconSun = stroke(
+  <>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </>,
+);
+export const IconWave = stroke(<path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2" />);
+export const IconType = stroke(<path d="M4 7V5h16v2M9 19h6M12 5v14" />);
+export const IconPalette = stroke(
+  <>
+    <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2" />
+    <circle cx="7.5" cy="11" r="1" fill="currentColor" />
+    <circle cx="10" cy="7" r="1" fill="currentColor" />
+    <circle cx="15" cy="7" r="1" fill="currentColor" />
+  </>,
+);
+export const IconHand = stroke(
+  <path d="M8 13V4.5a1.5 1.5 0 0 1 3 0V12m0-1.5v-2a1.5 1.5 0 0 1 3 0V12m0-1.5a1.5 1.5 0 0 1 3 0V12m0-1a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2a6 6 0 0 1-5.2-3L3.5 14a1.6 1.6 0 0 1 2.6-1.8L8 14.5" />,
+);

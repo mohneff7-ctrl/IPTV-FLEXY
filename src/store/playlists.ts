@@ -53,6 +53,6 @@ export const usePlaylists = create<PlaylistState>()(
       },
       remove: (id) => set((s) => ({ playlists: s.playlists.filter((p) => p.id !== id) })),
     }),
-    { name: 'flexy.playlists', version: 1 },
+    { name: 'layan.playlists', version: 1 },
   ),
 );

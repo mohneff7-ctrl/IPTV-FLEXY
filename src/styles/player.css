@@ -38,6 +38,67 @@
   position: absolute;
   inset: 0;
   z-index: 1;
+  /* Vertical swipes drive brightness / volume instead of scrolling. */
+  touch-action: none;
+}
+
+/* Brightness below 100% is a black veil (cheap); above it the video gets a filter. */
+.p-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  pointer-events: none;
+}
+
+/* Swipe feedback */
+.p-hud {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 58px;
+  padding: 14px 0;
+  border-radius: 999px;
+  background: rgba(20, 7, 10, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateY(-50%);
+  pointer-events: none;
+  animation: fade-in 0.15s;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.p-hud.left {
+  left: max(28px, 8%);
+}
+
+.p-hud.right {
+  right: max(28px, 8%);
+}
+
+.p-hud-bar {
+  position: relative;
+  width: 6px;
+  height: 120px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.p-hud-bar span {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: linear-gradient(0deg, #b3112b, #ff5a72);
+  box-shadow: 0 0 10px rgba(230, 32, 61, 0.8);
+  transition: height 0.05s linear;
 }
 
 /* Shared control chrome */
@@ -71,7 +132,7 @@
   align-items: center;
   gap: 10px;
   padding: calc(12px + var(--safe-t)) 16px 40px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent);
+  background: linear-gradient(to bottom, rgba(12, 2, 5, 0.85), transparent);
 }
 
 .p-titles {
@@ -83,7 +144,8 @@
 
 .p-titles strong {
   font-family: var(--display);
-  font-weight: 400;
+  font-weight: var(--display-w);
+  letter-spacing: -0.01em;
   font-size: 20px;
   line-height: 1.3;
   white-space: nowrap;
@@ -121,7 +183,23 @@
 }
 
 .p-btn.on {
-  color: var(--red);
+  color: #ff5a72;
+  filter: drop-shadow(0 0 8px rgba(230, 32, 61, 0.7));
+}
+
+.p-sleep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(230, 32, 61, 0.2);
+  border: 1px solid rgba(230, 32, 61, 0.45);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .p-text-btn {
@@ -147,12 +225,13 @@
 .p-big {
   width: 84px;
   height: 84px;
-  background: rgba(255, 45, 70, 0.9);
-  box-shadow: 0 12px 40px rgba(255, 45, 70, 0.45);
+  background: var(--red-grad);
+  box-shadow: 0 14px 44px rgba(230, 32, 61, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .p-big:hover {
-  background: var(--red);
+  background: var(--red-grad);
+  filter: brightness(1.12);
 }
 
 .p-big-side {
@@ -167,7 +246,7 @@
   inset-inline: 0;
   bottom: 0;
   padding: 50px 16px calc(10px + var(--safe-b));
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  background: linear-gradient(to top, rgba(12, 2, 5, 0.92), rgba(12, 2, 5, 0.5) 55%, transparent);
 }
 
 .p-seek-row {
@@ -291,7 +370,7 @@
   height: 16px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(255, 45, 70, 0.55);
+  box-shadow: 0 0 0 4px rgba(230, 32, 61, 0.55), 0 0 14px rgba(230, 32, 61, 0.8);
   transform: translateX(-50%) scale(0.85);
   transition: transform 0.15s;
   pointer-events: none;
@@ -317,7 +396,7 @@
   white-space: nowrap;
 }
 
-/* Subtitles */
+/* Subtitles — every visual property comes from the viewer's style settings (see lib/subtitleStyle). */
 .p-subs {
   position: absolute;
   z-index: 2;
@@ -330,24 +409,22 @@
   text-align: center;
   pointer-events: none;
   transition: bottom 0.3s var(--ease);
+  font-family: var(--sub-font, var(--font));
   font-size: calc(clamp(17px, 2.6vw, 34px) * var(--sub-scale, 1));
-  font-weight: 700;
+  font-weight: var(--sub-weight, 700);
   line-height: 1.35;
-  text-shadow:
-    0 0 3px #000,
-    0 0 3px #000,
-    0 2px 4px #000;
+  color: var(--sub-color, #fff);
+  text-shadow: var(--sub-shadow, 0 0 3px #000, 0 0 3px #000, 0 2px 4px #000);
 }
 
 .p-subs.raised {
   bottom: calc(118px + var(--safe-b));
 }
 
-.p-subs.boxed span {
-  background: rgba(0, 0, 0, 0.62);
-  padding: 2px 12px;
+.p-subs span {
+  background: var(--sub-bg, transparent);
+  padding: var(--sub-pad, 0);
   border-radius: 8px;
-  text-shadow: none;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -395,22 +472,24 @@
   z-index: 6;
   right: 16px;
   bottom: calc(108px + var(--safe-b));
-  width: min(340px, calc(100% - 32px));
-  max-height: min(60vh, 460px);
+  width: min(360px, calc(100% - 32px));
+  max-height: min(64vh, 480px);
+  overscroll-behavior: contain;
   overflow-y: auto;
   padding: 12px;
   border-radius: 20px;
-  background: rgba(22, 22, 28, 0.96);
+  background: linear-gradient(180deg, rgba(42, 13, 20, 0.97), rgba(20, 7, 10, 0.97));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 150, 160, 0.14);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: toast-in 0.2s var(--ease);
 }
 
 .p-menu h4 {
   font-family: var(--display);
-  font-weight: 400;
+  font-weight: var(--display-w);
+  letter-spacing: -0.01em;
   font-size: 18px;
   padding: 6px 10px 8px;
 }
@@ -432,8 +511,116 @@
 }
 
 .p-opt.on {
-  background: rgba(255, 45, 70, 0.18);
+  background: rgba(230, 32, 61, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(230, 32, 61, 0.35);
   color: #fff;
+}
+
+.p-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.p-menu-head h4 {
+  flex: 1;
+}
+
+.p-chip-btn {
+  flex: none;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.p-chip-btn:hover {
+  background: rgba(230, 32, 61, 0.25);
+}
+
+.p-menu-note {
+  padding: 0 10px 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.p-sync {
+  padding: 6px 0 4px;
+}
+
+.p-sync + .p-sync {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 4px;
+  padding-top: 10px;
+}
+
+.p-sync-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.p-sync-head span {
+  flex: 1;
+}
+
+.p-sync .p-delay {
+  border: 0;
+  margin: 0;
+  justify-content: center;
+}
+
+.p-sync .p-delay b {
+  min-width: 96px;
+  font-size: 16px;
+}
+
+.p-menu .sub-style .ss-label {
+  font-size: 13px;
+}
+
+.p-menu .swatch {
+  width: 30px;
+  height: 30px;
+}
+
+.p-sleep-done {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 40%, rgba(70, 8, 22, 0.92), rgba(5, 1, 2, 0.97));
+  animation: fade-in 0.6s;
+}
+
+.p-sleep-done svg {
+  color: #ff8a9b;
+  filter: drop-shadow(0 0 18px rgba(230, 32, 61, 0.8));
+}
+
+.p-sleep-done h3 {
+  font-family: var(--display);
+  font-weight: var(--display-w);
+  font-size: 28px;
+}
+
+.p-sleep-done p {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .p-opt.on::after {
@@ -520,6 +707,8 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   font-family: var(--display);
+  font-weight: var(--display-w);
+  letter-spacing: -0.01em;
   font-size: 26px;
   animation: fade-in 0.3s;
 }
@@ -549,7 +738,8 @@
 
 .p-error h3 {
   font-family: var(--display);
-  font-weight: 400;
+  font-weight: var(--display-w);
+  letter-spacing: -0.01em;
   font-size: 26px;
 }
 
@@ -596,5 +786,23 @@
   .p-time {
     min-width: 44px;
     font-size: 12px;
+  }
+}
+
+/* Short landscape phones: keep raised subtitles clear of the centre controls. */
+@media (max-height: 480px) {
+  .p-subs.raised {
+    bottom: calc(92px + var(--safe-b));
+  }
+  .p-big {
+    width: 64px;
+    height: 64px;
+  }
+  .p-big-side {
+    width: 48px;
+    height: 48px;
+  }
+  .p-hud-bar {
+    height: 90px;
   }
 }
