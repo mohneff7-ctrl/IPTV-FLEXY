@@ -828,3 +828,170 @@
   background: linear-gradient(135deg, #fff, #ffd9de);
   color: #5e0614;
 }
+
+/* ============================ Watermark ============================ */
+
+/* LAYAN mark on movies & series: white at 40%, top-left; slides under the top bar when controls show. */
+.p-watermark {
+  position: absolute;
+  z-index: 2;
+  top: calc(18px + var(--safe-t));
+  left: calc(24px + env(safe-area-inset-left, 0px));
+  font-family: 'Cairo Variable', var(--font);
+  font-weight: 900;
+  font-size: clamp(15px, 1.7vw, 24px);
+  line-height: 1;
+  letter-spacing: 0.24em;
+  color: #fff;
+  opacity: 0.4;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  user-select: none;
+  transition: transform 0.3s var(--ease);
+}
+
+.p-watermark.lowered {
+  transform: translateY(66px);
+}
+
+/* ============================ Pause screen ============================ */
+
+.p-pause {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 6.2%;
+  color: #fff;
+  font-family: var(--font);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.42) 38%, rgba(0, 0, 0, 0.12) 70%, rgba(0, 0, 0, 0.05) 100%),
+    rgba(0, 0, 0, 0.18);
+  animation: p-pause-in 0.8s var(--ease) both;
+  cursor: default;
+}
+
+.p-pause[dir='rtl'] {
+  background:
+    linear-gradient(270deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.42) 38%, rgba(0, 0, 0, 0.12) 70%, rgba(0, 0, 0, 0.05) 100%),
+    rgba(0, 0, 0, 0.18);
+}
+
+.p-pause-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: min(76%, 1180px);
+  margin-top: 8vh;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
+.p-pause-body > * {
+  animation: p-pause-rise 0.7s var(--ease) both;
+}
+
+.p-pause-body > :nth-child(2) {
+  animation-delay: 0.06s;
+}
+.p-pause-body > :nth-child(3) {
+  animation-delay: 0.12s;
+}
+.p-pause-body > :nth-child(4) {
+  animation-delay: 0.18s;
+}
+.p-pause-body > :nth-child(5) {
+  animation-delay: 0.24s;
+}
+
+.p-pause-kicker {
+  font-size: clamp(14px, 1.6vw, 25px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.p-pause-logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(50vw, 540px);
+  max-height: clamp(48px, 11.5vh, 112px);
+  margin: clamp(14px, 3.2vh, 34px) 0 clamp(12px, 2.6vh, 28px);
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.5));
+}
+
+.p-pause[dir='rtl'] .p-pause-logo {
+  object-position: right center;
+}
+
+.p-pause-name {
+  margin: clamp(10px, 2.4vh, 26px) 0 clamp(8px, 2vh, 22px);
+  font-family: 'Cairo Variable', var(--font);
+  font-weight: 900;
+  font-size: clamp(30px, 5.2vw, 76px);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.p-pause-code {
+  font-size: clamp(14px, 1.5vw, 23px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  direction: ltr;
+}
+
+.p-pause[dir='rtl'] .p-pause-code {
+  direction: rtl;
+}
+
+/* Keep every line flush with the reading edge, even English plots in the Arabic UI. */
+.p-pause[dir='rtl'] .p-pause-plot,
+.p-pause[dir='rtl'] .p-pause-title,
+.p-pause[dir='rtl'] .p-pause-name {
+  text-align: right;
+}
+
+.p-pause-title {
+  margin-top: clamp(6px, 1.4vh, 16px);
+  font-size: clamp(22px, 2.8vw, 44px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.p-pause-plot {
+  margin-top: clamp(8px, 1.8vh, 20px);
+  max-width: 1160px;
+  font-size: clamp(13.5px, 1.45vw, 22px);
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.94);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes p-pause-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes p-pause-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (max-height: 480px) {
+  .p-pause-body {
+    margin-top: 4vh;
+  }
+  .p-pause-plot {
+    -webkit-line-clamp: 2;
+  }
+}

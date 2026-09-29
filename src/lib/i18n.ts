@@ -184,6 +184,7 @@ const dict = {
   cancel: ['إلغاء', 'Cancel'],
   saved: ['تم الحفظ', 'Saved'],
   // player
+  youreWatching: ['أنت تشاهد', "You're watching"],
   sleepTimer: ['مؤقت النوم', 'Sleep timer'],
   sleepEndOfEpisode: ['نهاية الحلقة', 'End of episode'],
   sleepEndOfVideo: ['نهاية الفيديو', 'End of video'],

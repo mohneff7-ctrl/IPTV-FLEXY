@@ -14,6 +14,8 @@
 | 🎬 **Player** | hls.js (HLS/m3u8), mpegts.js (IPTV `.ts` / FLV live) and the native `<video>` element, with **automatic fallback** between engines. The engines load only when needed. Quality and audio-track selection, speed, fit/zoom/stretch, picture-in-picture, fullscreen with landscape lock, and a screen lock. |
 | ⚡ **Player UX** | Resume where you left off, double-tap to seek, keyboard shortcuts, lock-screen media controls, keep-screen-awake, **auto next episode** (picks the same `bingeGroup` stream, as Stremio does), and a "next episode" countdown. |
 | 🎞️ **Picture quality** | *Streaming quality* setting: **Best** (default) plays the highest resolution your connection allows, up to 4K, without capping to the screen size; **Balanced** caps to the screen; **Data saver** stays at 480p or lower. A live resolution badge (4K / 1080p / 720p) shows in the player. |
+| ⏸️ **Pause screen** | Pause a movie or episode for 5 seconds and a "You're watching" screen appears: the title logo, season and episode, episode title and plot. Any tap or key brings the controls back. |
+| 💧 **Watermark** | A white LAYAN mark at 40% opacity in the top-left corner of movies and series. |
 | 🌙 **Sleep timer** | Stop playback after 15–120 minutes or at the end of the current episode, with a countdown chip in the player. |
 | 🔊 **Audio sync** | Delay the sound by 0–5 s when it runs ahead of the picture (Web Audio; works with HLS and IPTV streams). |
 | 👆 **Swipe gestures** | On touch screens, swipe up or down on the left for brightness and on the right for volume. You can turn this off in Settings. |

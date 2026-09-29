@@ -131,9 +131,13 @@ async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents,
       if (cap >= 0) hls.autoLevelCapping = cap;
     }
     if (opts.preferredHeight) {
-      // Start on the best rendition at or below the preferred height; ABR stays on.
+      // Start on the best rendition at or below the preferred height (e.g. 1080p).
       const start = heights.reduce((best, h, i) => (h && h <= opts.preferredHeight! && (best < 0 || h > heights[best]) ? i : best), -1);
-      if (start >= 0) hls.startLevel = start;
+      if (start >= 0) {
+        hls.startLevel = start;
+        // "Best": that rendition is also the floor — ABR may climb (4K) but never drops below it.
+        if (max) hls.config.minAutoBitrate = hls.levels[start].bitrate;
+      }
     }
     engine.levels = hls.levels
       .map((l, index) => ({ index, height: l.height, bitrate: l.bitrate }))

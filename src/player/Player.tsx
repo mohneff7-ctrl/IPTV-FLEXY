@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { SourcedStream, Video } from '../lib/types';
+import type { Meta, SourcedStream, Video } from '../lib/types';
 import { usePlayback, type PlaybackSession } from '../store/playback';
 import { isWatched, useLibrary } from '../store/library';
 import { useSettings, type FitMode } from '../store/settings';
 import { useAddons } from '../store/addons';
-import { getStreams, getSubtitles } from '../lib/stremio';
+import { getStreams, getSubtitles, logoOf } from '../lib/stremio';
 import { externalPlayerUrl, playableUrl, qualityOf } from '../lib/streams';
 import { activeCues, langName, loadSubtitle, type Cue } from '../lib/subtitles';
 import { useT } from '../lib/i18n';
@@ -73,6 +73,7 @@ function carriedSleepTimer(): Sleep {
 }
 const FITS: FitMode[] = ['contain', 'cover', 'fill'];
 const HIDE_AFTER = 3200;
+const PAUSE_INFO_AFTER = 5000;
 
 /** Next episode in watch order (specials are skipped unless we are in them). */
 function nextVideo(videos: Video[] | undefined, current?: Video): Video | undefined {
@@ -161,6 +162,8 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
   const [sleepDone, setSleepDone] = useState(false);
   const [brightness, setBrightness] = useState(1);
   const [res, setRes] = useState<string | null>(null);
+  const [pauseInfo, setPauseInfo] = useState(false);
+  const pauseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const audioDelay = useAudioDelay(videoRef);
 
   const { stream, meta, video } = session;
@@ -369,6 +372,10 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
 
   const poke = useCallback(() => {
     setVisible(true);
+    // Any interaction dismisses the "You're watching" screen; it returns after 5 idle seconds.
+    setPauseInfo(false);
+    clearTimeout(pauseTimer.current);
+    if (videoRef.current?.paused) pauseTimer.current = setTimeout(() => setPauseInfo(true), PAUSE_INFO_AFTER);
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
       if (!videoRef.current?.paused && !menuOpen.current) {
@@ -382,6 +389,15 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
     poke();
     return () => clearTimeout(hideTimer.current);
   }, [poke, playing, menu]);
+
+  useEffect(() => () => clearTimeout(pauseTimer.current), []);
+
+  // The pause screen replaces the controls (like Netflix) and never covers other overlays.
+  const hasTitleInfo = !!meta && !live;
+  const pauseScreen = pauseInfo && hasTitleInfo && !playing && !menu && !error && !sleepDone && countdown == null && !locked;
+  useEffect(() => {
+    if (pauseScreen) setVisible(false);
+  }, [pauseScreen]);
 
   /* ---------------- actions ---------------- */
 
@@ -641,6 +657,7 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
 
   const onSurfaceClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (swipe.consumeClick()) return;
+    if (pauseScreen) return poke();
     if (locked) return poke();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
@@ -696,6 +713,14 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
       {brightness < 1 && <div className="p-dim" style={{ opacity: 1 - brightness }} />}
 
       <div className="p-surface" onClick={onSurfaceClick} {...swipe.handlers} />
+
+      {hasTitleInfo && (
+        <div className={cx('p-watermark', visible && !locked && 'lowered')} aria-hidden="true">
+          {APP_NAME}
+        </div>
+      )}
+
+      {pauseScreen && meta && <PauseScreen meta={meta} video={video} lang={settings.lang} onWake={poke} />}
 
       {swipe.hud && (
         <div className={cx('p-hud', swipe.hud.kind === 'brightness' ? 'left' : 'right')}>
@@ -1070,6 +1095,43 @@ function VideoPlayer({ session }: { session: PlaybackSession }) {
           <small className="p-error-code">{error}</small>
         </div>
       )}
+    </div>
+  );
+}
+
+/** "You're watching" screen shown after the video has been paused for a few seconds. */
+function PauseScreen({ meta, video, lang, onWake }: { meta: Meta; video?: Video; lang: 'ar' | 'en'; onWake: () => void }) {
+  const t = useT();
+  const [logoOk, setLogoOk] = useState(true);
+  const logo = logoOf(meta);
+  const ep = video?.episode ?? video?.number;
+  const isEpisode = !!video && video.season != null && ep != null;
+  const code = isEpisode ? (lang === 'ar' ? `${t('season')} ${video.season} · ${t('episode')} ${ep}` : `S${video.season}E${ep}`) : null;
+  const epTitle = isEpisode ? video.title || video.name : undefined;
+  const plot = (isEpisode && (video.overview || video.description)) || meta.description;
+  return (
+    <div className="p-pause" dir={lang === 'ar' ? 'rtl' : 'ltr'} onClick={onWake}>
+      <div className="p-pause-body">
+        <p className="p-pause-kicker">{t('youreWatching')}</p>
+        {logo && logoOk ? (
+          <img className="p-pause-logo" src={logo} alt={meta.name} referrerPolicy="no-referrer" onError={() => setLogoOk(false)} />
+        ) : (
+          <h2 className="p-pause-name" dir="auto">
+            {meta.name}
+          </h2>
+        )}
+        {code && <p className="p-pause-code">{code}</p>}
+        {epTitle && (
+          <h3 className="p-pause-title" dir="auto">
+            {epTitle}
+          </h3>
+        )}
+        {plot && (
+          <p className="p-pause-plot" dir="auto">
+            {plot}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

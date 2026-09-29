@@ -53,7 +53,7 @@ export const useSettings = create<Settings>()(
       ...SUBTITLE_DEFAULTS,
       swipeGestures: true,
       showIntro: true,
-      preferredQuality: 'auto',
+      preferredQuality: '1080p',
       streamQuality: 'max',
       fitMode: 'contain',
       seekStep: 10,
@@ -65,9 +65,11 @@ export const useSettings = create<Settings>()(
     }),
     {
       name: 'layan.settings',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
+        // v3: Full HD is the default target quality.
+        if (version < 3 && (s.preferredQuality == null || s.preferredQuality === 'auto')) s.preferredQuality = '1080p';
         // v1 had a simple on/off subtitle box.
         if (version < 2 && s.subtitleBackground === false) s.subtitleBgOpacity = 0;
         delete s.subtitleBackground;
