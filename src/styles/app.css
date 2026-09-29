@@ -1093,13 +1093,17 @@ p {
   width: var(--wide-w);
 }
 
-.poster-card:active .poster-frame,
-.rank-card:active .poster-frame,
-.wide-card:active,
-.channel-card:active,
-.genre-tile:active {
-  transform: scale(0.97);
-  transition-duration: 0.1s;
+/* Cards never move or resize (a lifted card got clipped by its scrolling row).
+   Selection is a crimson frame drawn *inside* the rounded corners, so it is
+   always complete. Hover styles only apply to real mouse pointers so a tap
+   on a phone doesn't leave a card stuck in the hover state. */
+.poster-card:focus-visible,
+.rank-card:focus-visible,
+.wide-card:focus-visible,
+.channel-card:focus-visible,
+.genre-tile:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .poster-frame {
@@ -1121,16 +1125,51 @@ p {
   border-radius: inherit;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
   pointer-events: none;
+  transition: box-shadow 0.2s;
 }
 
 .poster-card.landscape .poster-frame {
   aspect-ratio: 16 / 9;
 }
 
-.poster-card:hover .poster-frame,
-.poster-card:focus-visible .poster-frame {
-  transform: translateY(-5px) scale(1.03);
-  box-shadow: 0 22px 40px -14px rgba(0, 0, 0, 0.95), 0 0 0 2px rgba(230, 32, 61, 0.75), 0 14px 40px -10px rgba(230, 32, 61, 0.45);
+@media (hover: hover) and (pointer: fine) {
+  .poster-card:hover .poster-frame::after,
+  .rank-card:hover .poster-frame::after {
+    box-shadow: inset 0 0 0 2.5px rgba(230, 32, 61, 0.95), inset 0 0 22px rgba(230, 32, 61, 0.35);
+  }
+  .wide-card:hover::after,
+  .genre-tile:hover::after,
+  .channel-card:hover::after {
+    box-shadow: inset 0 0 0 2.5px rgba(230, 32, 61, 0.95);
+  }
+  .wide-card:hover .wide-play {
+    background: var(--red);
+  }
+}
+
+/* Keyboard / TV remote focus: same frame, white so it reads on any poster. */
+.poster-card:focus-visible .poster-frame::after,
+.rank-card:focus-visible .poster-frame::after {
+  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 6px rgba(230, 32, 61, 0.9);
+}
+
+.wide-card:focus-visible::after,
+.genre-tile:focus-visible::after,
+.channel-card:focus-visible::after {
+  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 6px rgba(230, 32, 61, 0.9);
+}
+
+/* Same inner-frame layer for the other card types. */
+.wide-card::after,
+.genre-tile::after,
+.channel-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: box-shadow 0.2s;
 }
 
 .poster-img,
@@ -1277,10 +1316,7 @@ p {
   margin-left: auto;
 }
 
-.rank-card:hover .poster-frame {
-  transform: translateY(-4px);
-  box-shadow: 0 0 0 2px rgba(230, 32, 61, 0.6);
-}
+
 
 /* ============================ Wide (episode / continue) card ============================ */
 
@@ -1296,9 +1332,7 @@ p {
   transition: transform 0.3s var(--ease);
 }
 
-.wide-card:hover {
-  transform: translateY(-3px);
-}
+
 
 .wide-img {
   width: 100%;
@@ -1340,10 +1374,7 @@ p {
   transition: background 0.2s, transform 0.2s;
 }
 
-.wide-card:hover .wide-play {
-  background: var(--red);
-  transform: translate(-50%, -50%) scale(1.06);
-}
+
 
 .wide-info {
   position: absolute;
@@ -1688,7 +1719,7 @@ p {
 }
 
 .promo:hover {
-  transform: translateY(-2px);
+  border-color: rgba(230, 32, 61, 0.45);
 }
 
 .promo-inline {
@@ -2076,10 +2107,7 @@ p {
   background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 70%);
 }
 
-.genre-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px -14px rgba(230, 32, 61, 0.6);
-}
+
 
 .recent-head {
   display: flex;
@@ -2783,6 +2811,7 @@ input[type='range']:focus-visible {
 }
 
 .channel-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2794,10 +2823,7 @@ input[type='range']:focus-visible {
   transition: transform 0.2s var(--ease), border-color 0.2s;
 }
 
-.channel-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(230, 32, 61, 0.5);
-}
+
 
 .channel-logo {
   width: 64px;
