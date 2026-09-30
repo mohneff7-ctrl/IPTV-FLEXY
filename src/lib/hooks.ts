@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Addon, ManifestCatalog, MetaPreview } from './types';
 import { catalogExtras, getCatalog } from './stremio';
-import { useAddons } from '../store/addons';
+import { catalogKey, useActiveAddons, useAddons } from '../store/addons';
 
 export interface CatalogRef {
   addon: Addon;
@@ -11,17 +11,19 @@ export interface CatalogRef {
 
 /** Every browseable catalog from every installed addon, optionally filtered by type. */
 export function useCatalogs(filter?: (c: ManifestCatalog, a: Addon) => boolean): CatalogRef[] {
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
+  const hidden = useAddons((s) => s.hiddenCatalogs);
   return useMemo(
     () =>
       addons.flatMap((addon) =>
         (addon.manifest.catalogs ?? [])
           .filter((c) => catalogExtras(c).browsable && !catalogExtras(c).searchOnly)
+          .filter((c) => !hidden.includes(catalogKey(addon.manifest.id, c.type, c.id)))
           .filter((c) => (filter ? filter(c, addon) : true))
           .map((catalog) => ({ addon, catalog, key: `${addon.manifest.id}|${catalog.type}|${catalog.id}` })),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [addons],
+    [addons, hidden],
   );
 }
 

@@ -6,6 +6,7 @@ import { Logo } from './Logo';
 import {
   IconBack,
   IconGear,
+  IconBall,
   IconHeart,
   IconHome,
   IconMask,
@@ -24,15 +25,19 @@ export const NAV: { to: string; key: I18nKey; icon: (p: { size?: number }) => Re
   { to: '/browse/series', key: 'series', icon: IconSeries },
   { to: '/browse/movie', key: 'movies', icon: IconMovie },
   { to: '/channels', key: 'channels', icon: IconTv },
+  { to: '/matches', key: 'matches', icon: IconBall },
   { to: '/browse/anime', key: 'anime', icon: IconMask },
   { to: '/addons', key: 'addons', icon: IconPuzzle },
 ];
+
+/** The phone tab bar mirrors the reference: Addons lives in the menu instead. */
+const BOTTOM_NAV = NAV.filter((n) => n.to !== '/addons');
 
 export function BottomNav() {
   const t = useT();
   return (
     <nav className="bottom-nav" aria-label="main">
-      {NAV.map(({ to, key, icon: Icon }) => (
+      {BOTTOM_NAV.map(({ to, key, icon: Icon }) => (
         <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => cx('bn-item', isActive && 'active')}>
           <Icon size={24} />
           <span>{t(key)}</span>

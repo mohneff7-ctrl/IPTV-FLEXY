@@ -11,9 +11,13 @@
 | | |
 |---|---|
 | 🧩 **Stremio addons** | Install any addon by URL (`https://…/manifest.json` or `stremio://…`). Supports catalogs (with genre, search and paging), meta, streams, subtitles and addon catalogs. Honours `types` / `idPrefixes`. You can reorder addons, open their configure page, remove them, and browse the official and community addon lists. |
+| 🧭 **Addon manager** | Before installing, FLEXY shows what an addon will add (catalogs, details, watch links, subtitles, addon lists). Each addon can be switched on/off and each of its catalogs shown or hidden. Links work in any form: `manifest.json`, `stremio://`, `/configure` pages or Stremio Web share links. On Android, addon websites' **Install** buttons open FLEXY directly. Addons that only have catalogs and streams (common for TV/IPTV addons) still open titles, using the catalog's own info, as Stremio does. |
+| 🚀 **Native player (Android)** | Streams play in a built-in **ExoPlayer (Media3)** screen: the phone's hardware decoder, fast start (~1 s of buffer), large forward buffer, **always highest quality**, and MKV / HEVC / AC3 / DASH support. It also handles addon request headers, subtitles from every addon, resume, and next episode. If a stream fails it falls back to the web player automatically. You can switch between the native and built-in players in Settings. |
+| 🔗 **External links** | Addon links that point to a video play inside FLEXY; web pages open in an in-app browser instead of leaving the app. |
 | 🎬 **Player** | hls.js (HLS/m3u8), mpegts.js (IPTV `.ts` / FLV live) and the native `<video>` element, with **automatic fallback** between engines. The engines load only when needed. Quality and audio-track selection, speed, fit/zoom/stretch, picture-in-picture, fullscreen with landscape lock, and a screen lock. |
 | ⚡ **Player UX** | Resume where you left off, double-tap to seek, keyboard shortcuts, lock-screen media controls, keep-screen-awake, **auto next episode** (picks the same `bingeGroup` stream, as Stremio does), and a "next episode" countdown. |
 | 💬 **Subtitles** | From every subtitle addon plus the ones embedded in streams. SRT/VTT, Arabic CP-1256 auto-detection, a sync (delay) control, size and background settings, and auto-select of your preferred language. |
+| ⚽ **Football** | Live scores for the day across 300+ competitions (Champions League, Premier League, LALIGA, Saudi Pro League…), refreshed every 30 s during live matches. There's a 7-day date strip, top-league / live / all filters, and match details (goals, cards, substitutions, stats, venue, TV channels) with a "Watch" button that searches your IPTV channels. Data comes from ESPN's public API. |
 | 📺 **Live TV** | Add M3U playlists; channels are grouped with search. Addon `tv` catalogs are listed too. |
 | ❤️ **Library** | Favorites, continue watching, per-episode watched marks, and backup export/import. |
 | 🌍 **Arabic RTL + English** | Full right-to-left layout, switchable in Settings. |
@@ -29,14 +33,18 @@ npm run build      # production build in dist/
 
 ## 📱 Android APK
 
-Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-debug-apk` from the run's artifacts and install it on your phone or Android TV.
+**📥 Download for your phone:** https://github.com/mohneff7-ctrl/IPTV-FLEXY/releases/latest/download/FLEXY.apk (open this link in your phone's browser).
+
+Every push runs **GitHub Actions → "Build Android APK"**. Download `FLEXY-apk` from the run's artifacts and install it on your phone or Android TV.
+
+All builds are signed with the same key (`android/app/flexy.keystore`), so a new APK always installs over the previous one. If Android says **"App not installed"**, uninstall any older FLEXY build first (older test builds were signed with a different key). For the Play Store, create a private upload key and keep it out of the repository.
 
 Local build (requires Android Studio / Android SDK + JDK 21):
 
 ```bash
 npm run android:sync   # build web app + copy into android/
 npm run android:open   # open in Android Studio (Run ▶)
-npm run android:apk    # or build android/app/build/outputs/apk/debug/app-debug.apk
+npm run android:apk    # or build android/app/build/outputs/apk/release/app-release.apk
 ```
 
 In the Android app, addon and playlist requests go through the native HTTP stack, so addons without CORS headers work. Plain `http://` IPTV links are allowed.

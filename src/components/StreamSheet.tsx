@@ -12,12 +12,13 @@ import {
   streamTags,
   type Quality,
 } from '../lib/streams';
-import { useAddons } from '../store/addons';
+import { useActiveAddons } from '../store/addons';
 import { usePlayback } from '../store/playback';
 import { useSettings } from '../store/settings';
 import { useT } from '../lib/i18n';
 import { cx } from '../lib/format';
 import { Empty, Sheet, Spinner, toast } from './ui';
+import { isMediaUrl, openInApp } from '../lib/native';
 import { IconCopy, IconDownload, IconExternal, IconPlay } from './Icons';
 
 export interface StreamTarget {
@@ -31,11 +32,17 @@ export function usePlayStream() {
   const nav = useNavigate();
   const start = usePlayback((s) => s.start);
   const t = useT();
-  return (stream: SourcedStream, target: StreamTarget) => {
+  return async (stream: SourcedStream, target: StreamTarget) => {
     const kind = streamKind(stream);
     if (kind === 'external') {
-      window.open(stream.externalUrl, '_blank', 'noopener');
-      return;
+      const ext = stream.externalUrl!;
+      // A link that is really a video plays inside FLEXY; a web page opens in the in-app browser.
+      if (await isMediaUrl(ext)) {
+        stream = { ...stream, url: ext };
+      } else {
+        await openInApp(ext);
+        return;
+      }
     }
     if (kind === 'torrent' && !playableUrl(stream)) {
       toast(t('torrentNeedsServer'), { label: t('settings'), run: () => nav('/settings') });
@@ -72,7 +79,7 @@ export function StreamSheet({
   mode?: 'watch' | 'download';
 }) {
   const t = useT();
-  const addons = useAddons((s) => s.addons);
+  const addons = useActiveAddons();
   const preferred = useSettings((s) => s.preferredQuality);
   const [streams, setStreams] = useState<SourcedStream[]>([]);
   const [pending, setPending] = useState(0);

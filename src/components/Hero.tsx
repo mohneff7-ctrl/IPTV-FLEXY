@@ -50,6 +50,9 @@ export function Hero({ items }: { items: MetaPreview[] | null }) {
     >
       {list.map((m, i) => {
         const active = i === index;
+        // Only the current slide and its neighbours exist in the page: keeps GPU memory low on phones.
+        const near = active || i === (index + 1) % list.length || i === (index - 1 + list.length) % list.length;
+        if (!near) return null;
         const genres = genresOf(m).slice(0, 2);
         return (
           <div key={m.id} className={cx('hero-slide', active && 'active')} aria-hidden={!active}>

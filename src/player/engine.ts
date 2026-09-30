@@ -33,6 +33,8 @@ export interface Engine {
 export interface EngineEvents {
   onFatal: (reason: string) => void;
   onTracks: () => void;
+  /** Start at, and keep preferring, the highest rendition. */
+  highest?: boolean;
 }
 
 export function guessKind(url: string): EngineKind {
@@ -79,15 +81,21 @@ async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents)
     }
     throw new Error('hls-unsupported');
   }
+  const top = !!ev.highest;
   const hls = new Hls({
     enableWorker: true,
     lowLatencyMode: false,
     startLevel: -1,
-    capLevelToPlayerSize: true,
-    maxBufferLength: 40,
-    maxMaxBufferLength: 120,
-    backBufferLength: 60,
-    abrEwmaDefaultEstimate: 4_000_000,
+    // Highest-quality mode: never cap to the screen size, assume a fast line,
+    // and let ABR climb eagerly; otherwise stay bandwidth-friendly.
+    capLevelToPlayerSize: !top,
+    abrEwmaDefaultEstimate: top ? 25_000_000 : 4_000_000,
+    abrBandWidthFactor: top ? 0.98 : 0.95,
+    abrBandWidthUpFactor: top ? 0.9 : 0.7,
+    maxBufferLength: 60,
+    maxMaxBufferLength: 300,
+    maxBufferSize: 150 * 1000 * 1000,
+    backBufferLength: 90,
     startFragPrefetch: true,
     fragLoadingMaxRetry: 6,
     manifestLoadingMaxRetry: 4,
@@ -109,6 +117,13 @@ async function hlsEngine(video: HTMLVideoElement, url: string, ev: EngineEvents)
   };
   let mediaRecoveries = 0;
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    if (top && hls.levels.length > 1) {
+      // Start directly on the best rendition instead of climbing from the lowest.
+      let best = 0;
+      hls.levels.forEach((l, i) => (l.bitrate > hls.levels[best].bitrate ? (best = i) : 0));
+      hls.startLevel = best;
+      hls.nextLevel = best;
+    }
     engine.levels = hls.levels
       .map((l, index) => ({ index, height: l.height, bitrate: l.bitrate }))
       .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate);
@@ -143,6 +158,9 @@ async function mpegtsEngine(video: HTMLVideoElement, url: string, ev: EngineEven
     {
       enableWorker: true,
       lazyLoad: false,
+      // Faster first frame on live IPTV.
+      enableStashBuffer: false,
+      stashInitialSize: 384 * 1024,
       liveBufferLatencyChasing: true,
       liveBufferLatencyMaxLatency: 6,
       liveBufferLatencyMinRemain: 1.5,

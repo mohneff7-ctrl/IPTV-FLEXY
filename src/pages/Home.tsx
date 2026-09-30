@@ -6,7 +6,12 @@ import { continueWatching, useLibrary } from '../store/library';
 import { Hero } from '../components/Hero';
 import { CatalogRow, RankRow, Row, SkeletonRow } from '../components/Rows';
 import { ProgressCard } from '../components/Cards';
-import { Empty, SectionTitle } from '../components/ui';
+import { MatchCard, MatchSheet, useMatches } from '../components/Football';
+import type { Match } from '../lib/football';
+import { useSettings } from '../store/settings';
+import { useMemo, useState } from 'react';
+import { Empty, SectionTitle, SeeAll } from '../components/ui';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { IconBolt, IconLive, IconPuzzle } from '../components/Icons';
 
 export function PromoBanner({ to, title, text, cta, tone, icon }: { to: string; title: string; text: string; cta: string; tone: 'violet' | 'red'; icon: React.ReactNode }) {
@@ -40,6 +45,34 @@ export function ContinueRow() {
   );
 }
 
+/** Today's featured matches (live first), like the reference home screen. */
+function MatchesRow() {
+  const t = useT();
+  const day = useMemo(() => new Date(), []);
+  const { matches } = useMatches(day);
+  const [open, setOpen] = useState<Match | null>(null);
+  const featured = (matches ?? []).filter((m) => m.priority < 100);
+  const list = [...(featured.length ? featured : matches ?? [])]
+    .sort((a, b) => (a.state === 'in' ? 0 : a.state === 'pre' ? 1 : 2) - (b.state === 'in' ? 0 : b.state === 'pre' ? 1 : 2))
+    .slice(0, 15);
+  if (matches && !list.length) return null;
+  return (
+    <section className="section">
+      <SectionTitle title={t('todayMatches')} action={<SeeAll to="/matches" label={t('seeAll')} />} />
+      {matches ? (
+        <Row>
+          {list.map((m) => (
+            <MatchCard key={m.id} m={m} onOpen={setOpen} />
+          ))}
+        </Row>
+      ) : (
+        <SkeletonRow wide />
+      )}
+      <MatchSheet match={open} onClose={() => setOpen(null)} />
+    </section>
+  );
+}
+
 function HeroFrom({ cref }: { cref?: CatalogRef }) {
   const { items } = useCatalogItems(cref);
   return <Hero items={cref ? items : []} />;
@@ -51,6 +84,7 @@ export default function Home() {
   const catalogs = useCatalogs();
   const heroRef = catalogs.find((c) => c.catalog.type === 'series') ?? catalogs[0];
   const rankRef = catalogs.find((c) => c.catalog.type === 'movie') ?? catalogs[0];
+  const showMatches = useSettings((s) => s.showMatchesHome);
 
   if (ready && !catalogs.length) {
     return (
@@ -86,11 +120,26 @@ export default function Home() {
   const rows = catalogs.filter((c) => c !== rankRef);
   return (
     <div className="page home">
-      <HeroFrom cref={heroRef} />
-      <ContinueRow />
-      {rankRef && <RankRow cref={rankRef} />}
+      <ErrorBoundary silent>
+        <HeroFrom cref={heroRef} />
+      </ErrorBoundary>
+      {showMatches && (
+        <ErrorBoundary silent>
+          <MatchesRow />
+        </ErrorBoundary>
+      )}
+      <ErrorBoundary silent>
+        <ContinueRow />
+      </ErrorBoundary>
+      {rankRef && (
+        <ErrorBoundary silent>
+          <RankRow cref={rankRef} />
+        </ErrorBoundary>
+      )}
       {rows.slice(0, 3).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       <PromoBanner
         to="/browse/anime"
@@ -101,7 +150,9 @@ export default function Home() {
         cta={t('watchNow')}
       />
       {rows.slice(3, 7).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       <PromoBanner
         to="/channels"
@@ -112,7 +163,9 @@ export default function Home() {
         cta={t('watchNow')}
       />
       {rows.slice(7).map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
     </div>
   );

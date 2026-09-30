@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Addon } from '../lib/types';
@@ -9,9 +10,16 @@ export const DEFAULT_ADDON_URLS = [
   'https://opensubtitles-v3.strem.io/manifest.json',
 ];
 
+/** Key of one catalog of one addon, used to hide it from Home and the sections. */
+export const catalogKey = (addonId: string, type: string, id: string) => `${addonId}|${type}|${id}`;
+
 interface AddonsState {
   addons: Addon[];
+  /** catalogKey()s the user hid from Home and the sections. */
+  hiddenCatalogs: string[];
   ready: boolean;
+  setDisabled: (transportUrl: string, disabled: boolean) => void;
+  toggleCatalog: (key: string) => void;
   install: (url: string) => Promise<Addon>;
   remove: (transportUrl: string) => void;
   move: (transportUrl: string, dir: -1 | 1) => void;
@@ -23,7 +31,14 @@ export const useAddons = create<AddonsState>()(
   persist(
     (set, get) => ({
       addons: [],
+      hiddenCatalogs: [],
       ready: false,
+      setDisabled: (transportUrl, disabled) =>
+        set((s) => ({ addons: s.addons.map((a) => (a.transportUrl === transportUrl ? { ...a, disabled } : a)) })),
+      toggleCatalog: (key) =>
+        set((s) => ({
+          hiddenCatalogs: s.hiddenCatalogs.includes(key) ? s.hiddenCatalogs.filter((k) => k !== key) : [...s.hiddenCatalogs, key],
+        })),
       install: async (url) => {
         const addon = await fetchManifest(url);
         set((s) => {
@@ -31,7 +46,7 @@ export const useAddons = create<AddonsState>()(
             (a) => a.transportUrl === addon.transportUrl || a.manifest.id === addon.manifest.id,
           );
           const next = [...s.addons];
-          if (existing >= 0) next[existing] = { ...addon, protected: next[existing].protected };
+          if (existing >= 0) next[existing] = { ...addon, protected: next[existing].protected, disabled: false };
           else next.push(addon);
           return { addons: next };
         });
@@ -52,7 +67,7 @@ export const useAddons = create<AddonsState>()(
           get().addons.map(async (a) => {
             try {
               const fresh = await fetchManifest(a.transportUrl);
-              return { ...fresh, protected: a.protected };
+              return { ...fresh, protected: a.protected, disabled: a.disabled };
             } catch {
               return a;
             }
@@ -73,6 +88,12 @@ export const useAddons = create<AddonsState>()(
         });
       },
     }),
-    { name: 'flexy.addons', version: 1, partialize: (s) => ({ addons: s.addons }) },
+    { name: 'flexy.addons', version: 1, partialize: (s) => ({ addons: s.addons, hiddenCatalogs: s.hiddenCatalogs }) },
   ),
 );
+
+/** Installed addons the user has not turned off, in priority order. */
+export function useActiveAddons(): Addon[] {
+  const addons = useAddons((s) => s.addons);
+  return useMemo(() => addons.filter((a) => !a.disabled), [addons]);
+}

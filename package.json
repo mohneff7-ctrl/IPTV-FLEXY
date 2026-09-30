@@ -2,7 +2,7 @@
   "name": "flexy",
   "private": true,
   "version": "1.0.0",
-  "description": "FLEXY \u2014 a fast, beautiful media center compatible with every Stremio addon.",
+  "description": "FLEXY — a fast, beautiful media center compatible with every Stremio addon.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,11 +11,12 @@
     "typecheck": "tsc -b",
     "android:sync": "vite build && cap sync android",
     "android:open": "cap open android",
-    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.2",
     "@capacitor/screen-orientation": "^8.0.1",
     "@capacitor/status-bar": "^8.0.3",

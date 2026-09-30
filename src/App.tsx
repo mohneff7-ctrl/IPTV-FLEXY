@@ -3,8 +3,10 @@ import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useSettings } from './store/settings';
 import { useAddons } from './store/addons';
 import { BottomNav, Drawer, TopBar } from './components/Shell';
-import { Spinner, Toaster } from './components/ui';
-import { setupBackButton, setupStatusBar } from './lib/native';
+import { Empty, Spinner, Toaster } from './components/ui';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Intro } from './components/Intro';
+import { setupAddonLinks, setupBackButton, setupStatusBar } from './lib/native';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Detail from './pages/Detail';
@@ -16,6 +18,7 @@ const Favorites = lazy(() => import('./pages/Favorites'));
 const Addons = lazy(() => import('./pages/Addons'));
 const Channels = lazy(() => import('./pages/Channels'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Matches = lazy(() => import('./pages/Matches'));
 const Player = lazy(() => import('./player/Player'));
 
 function Layout() {
@@ -35,6 +38,22 @@ function Layout() {
       {floatingHeader && <TopBar onMenu={() => setDrawer(true)} />}
       <Drawer open={drawer} onClose={() => setDrawer(false)} />
       <main className={showNav ? 'main with-nav' : 'main'}>
+        <ErrorBoundary
+          key={path}
+          fallback={
+            <div className="page page-pad">
+              <Empty
+                title="حدث خطأ في هذه الصفحة"
+                text="Something went wrong on this screen."
+                action={
+                  <button className="btn btn-primary" onClick={() => (location.hash = '#/')}>
+                    الرئيسية
+                  </button>
+                }
+              />
+            </div>
+          }
+        >
         <Suspense
           fallback={
             <div className="page center-fill">
@@ -51,14 +70,17 @@ function Layout() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/addons" element={<Addons />} />
             <Route path="/channels" element={<Channels />} />
+            <Route path="/matches" element={<Matches />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/play" element={<Player />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
       {showNav && <BottomNav />}
       <Toaster />
+      <Intro />
     </div>
   );
 }
@@ -70,6 +92,9 @@ export default function App() {
   useEffect(() => {
     bootstrap();
     setupStatusBar();
+    setupAddonLinks((url) => {
+      location.hash = `#/addons?install=${encodeURIComponent(url)}`;
+    });
     setupBackButton(() => {
       const atHome = ['', '#', '#/'].includes(location.hash);
       if (!atHome) history.back();

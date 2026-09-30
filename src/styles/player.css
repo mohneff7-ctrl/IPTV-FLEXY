@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: calc(12px + var(--safe-t)) 16px 40px;
+  padding: calc(36px + var(--safe-t)) 16px 40px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent);
 }
 
@@ -159,8 +159,6 @@
   width: 60px;
   height: 60px;
   background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
 .p-bottom {
@@ -401,8 +399,6 @@
   padding: 12px;
   border-radius: 20px;
   background: rgba(22, 22, 28, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: toast-in 0.2s var(--ease);
@@ -517,8 +513,6 @@
   justify-content: center;
   gap: 18px;
   background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   font-family: var(--display);
   font-size: 26px;
   animation: fade-in 0.3s;
@@ -597,4 +591,26 @@
     min-width: 44px;
     font-size: 12px;
   }
+}
+
+/* Shown for a moment while the native player opens (and when it returns). */
+.native-launch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+.native-launch strong {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+}
+
+.native-launch span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
 }

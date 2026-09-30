@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePlaylists } from '../store/playlists';
 import { usePlayback } from '../store/playback';
 import { useCatalogs } from '../lib/hooks';
@@ -8,6 +8,7 @@ import { cx } from '../lib/format';
 import type { Channel } from '../lib/m3u';
 import { PageHeader } from '../components/Shell';
 import { CatalogRow } from '../components/Rows';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Empty, Img, SectionTitle, Sheet, Spinner, toast } from '../components/ui';
 import { IconLive, IconPlus, IconRefresh, IconSearch, IconTrash, IconTv } from '../components/Icons';
 
@@ -19,7 +20,8 @@ export default function Channels() {
   const tvCatalogs = useCatalogs((c) => c.type === 'tv' || c.type === 'channel');
   const [active, setActive] = useState<string | undefined>(playlists[0]?.id);
   const [group, setGroup] = useState<string>();
-  const [query, setQuery] = useState('');
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(params.get('q') ?? '');
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: '', url: '' });
   const [busy, setBusy] = useState(false);
@@ -140,7 +142,9 @@ export default function Channels() {
       </section>
 
       {tvCatalogs.map((c) => (
-        <CatalogRow key={c.key} cref={c} />
+        <ErrorBoundary key={c.key} silent>
+          <CatalogRow cref={c} />
+        </ErrorBoundary>
       ))}
       {!tvCatalogs.length && playlists.length === 0 && (
         <Empty icon={<IconTv size={44} />} title={t('addonChannels')} text={t('noAddonsForTypeHint')} />

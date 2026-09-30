@@ -16,15 +16,22 @@ import { isNative, nativeGetText } from './native';
 /* URLs                                                                */
 /* ------------------------------------------------------------------ */
 
-/** Accepts `stremio://…`, bare hosts, base URLs or full manifest URLs. */
+/**
+ * Accepts every way people share Stremio addons: `stremio://…`, bare hosts,
+ * base URLs, full manifest URLs, `/configure` pages and Stremio Web links
+ * (`…#/addons?addon=<encoded manifest url>`).
+ */
 export function normalizeManifestUrl(input: string): string {
-  let url = input.trim();
+  let url = input.trim().replace(/^["'<\s]+|["'>\s]+$/g, '');
   if (!url) throw new Error('empty');
+  const shared = /[?&]addon=([^&#]+)/.exec(url);
+  if (shared && /stremio/i.test(url)) url = decodeURIComponent(shared[1]);
   url = url.replace(/^stremio:\/\//i, 'https://');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   const u = new URL(url);
   if (!u.pathname.endsWith('/manifest.json')) {
-    u.pathname = u.pathname.replace(/\/+$/, '') + '/manifest.json';
+    u.pathname = u.pathname.replace(/\/+$/, '').replace(/\/configure$/i, '') + '/manifest.json';
+    u.hash = '';
   }
   return u.toString();
 }
@@ -76,10 +83,10 @@ export function withProxy(url: string): string | null {
   return proxy.includes('{url}') ? proxy.replace('{url}', encodeURIComponent(url)) : proxy + url;
 }
 
-export async function fetchJson<T>(url: string, { timeout = 15000, useCache = true } = {}): Promise<T> {
+export async function fetchJson<T>(url: string, { timeout = 15000, useCache = true, ttl = CACHE_TTL } = {}): Promise<T> {
   if (useCache) {
     const hit = cache.get(url);
-    if (hit && Date.now() - hit.at < CACHE_TTL) return hit.data as T;
+    if (hit && Date.now() - hit.at < ttl) return hit.data as T;
     const pending = inflight.get(url);
     if (pending) return pending as Promise<T>;
   }
@@ -186,7 +193,68 @@ export async function getCatalog(
   if (extra.skip) params.skip = extra.skip;
   const url = resourceUrl(addon, 'catalog', catalog.type, catalog.id, params);
   const data = await fetchJson<{ metas?: MetaPreview[] }>(url);
-  return (data.metas ?? []).filter((m) => m && m.id && m.name);
+  const metas = (Array.isArray(data.metas) ? data.metas : []).filter((m) => m && m.id && m.name).map(cleanMeta);
+  metas.forEach((m) => rememberPreview({ ...m, type: m.type || catalog.type }, addon));
+  return metas;
+}
+
+const str = (v: unknown): string | undefined => (v == null || v === '' ? undefined : typeof v === 'string' ? v : String(v));
+const strList = (v: unknown): string[] | undefined =>
+  Array.isArray(v) ? v.filter((x) => x != null).map(String) : typeof v === 'string' ? [v] : undefined;
+
+/** Addons are written by many people: coerce fields the UI treats as text. */
+export function cleanMeta<T extends MetaPreview>(m: T): T {
+  return {
+    ...m,
+    id: String(m.id),
+    type: str(m.type) ?? '',
+    name: String(m.name),
+    poster: str(m.poster),
+    background: str(m.background),
+    logo: str(m.logo),
+    description: str(m.description),
+    releaseInfo: str(m.releaseInfo),
+    year: str(m.year),
+    imdbRating: m.imdbRating != null && !isNaN(Number(m.imdbRating)) ? String(m.imdbRating) : undefined,
+    runtime: str(m.runtime),
+    country: str(m.country),
+    genres: strList(m.genres),
+    genre: strList(m.genre),
+    links: Array.isArray(m.links) ? m.links : undefined,
+    trailers: Array.isArray(m.trailers) ? m.trailers : undefined,
+    trailerStreams: Array.isArray(m.trailerStreams) ? m.trailerStreams : undefined,
+  };
+}
+
+/*
+ * Catalog previews, remembered so a title still opens when no installed addon
+ * has a `meta` resource for it (common with TV / IPTV addons). Stremio does
+ * the same: it falls back to the catalog's own preview.
+ */
+const PREVIEW_KEY = 'flexy.previews';
+const previews = new Map<string, { meta: MetaPreview; addonName: string }>();
+try {
+  const saved = JSON.parse(sessionStorage.getItem(PREVIEW_KEY) ?? '[]') as [string, { meta: MetaPreview; addonName: string }][];
+  saved.forEach(([k, v]) => previews.set(k, v));
+} catch {
+  /* private mode */
+}
+let persistTimer: ReturnType<typeof setTimeout> | undefined;
+
+function rememberPreview(meta: MetaPreview, addon: Addon) {
+  previews.set(`${meta.type}:${meta.id}`, { meta, addonName: addon.manifest.name });
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    try {
+      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify([...previews.entries()].slice(-800)));
+    } catch {
+      /* quota */
+    }
+  }, 500);
+}
+
+export function previewOf(type: string, id: string) {
+  return previews.get(`${type}:${id}`);
 }
 
 export async function getMeta(addons: Addon[], type: string, id: string): Promise<{ meta: Meta; addon: Addon } | null> {
@@ -194,7 +262,14 @@ export async function getMeta(addons: Addon[], type: string, id: string): Promis
   for (const addon of candidates) {
     try {
       const data = await fetchJson<{ meta?: Meta }>(resourceUrl(addon, 'meta', type, id));
-      if (data.meta && data.meta.id) return { meta: data.meta, addon };
+      if (data.meta && data.meta.id) {
+        const meta = cleanMeta(data.meta);
+        meta.videos = Array.isArray(data.meta.videos) ? data.meta.videos.filter((v) => v && v.id) : undefined;
+        meta.cast = strList(data.meta.cast);
+        meta.director = strList(data.meta.director);
+        meta.writer = strList(data.meta.writer);
+        return { meta, addon };
+      }
     } catch {
       /* try the next addon */
     }
